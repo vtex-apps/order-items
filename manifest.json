@@ -1,20 +1,12 @@
 {
   "vendor": "vtex",
-  "name": "base-store-component",
+  "name": "order-items",
   "version": "0.0.1",
-  "title": "IO Base Component",
-  "description": "IO Base component",
+  "title": "Order Items",
+  "description": "Order Items",
   "defaultLocale": "pt-BR",
   "builders": {
-    "messages": "1.x",
-    "store": "0.x",
     "react": "3.x"
   },
   "mustUpdateAt": "2019-04-02",
-  "scripts": {
-    "postreleasy": "vtex publish --verbose"
-  },
-  "dependencies": {
-    "vtex.styleguide": "9.x"
-  }
 }
