@@ -9,7 +9,10 @@ Any kind of item query or manipulation should be made through this component. Th
 Use the function `useOrderItems` to get access to the API methods. Your component must be contained in a `OrderItemsProvider`, which in turn must be contained in a `OrderManagerProvider`.
 
 ```tsx
-const Component: FunctionComponent = () => (
+import { OrderManagerProvider } from 'vtex.order-manager/OrderManager'
+import { OrderItemsProvider, useOrderItems } from 'vtex.order-items/OrderItems'
+
+const MainComponent: FunctionComponent = () => (
   <OrderManagerProvider>
     <OrderItemsProvider>
       <MyComponent />
