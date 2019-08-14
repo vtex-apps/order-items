@@ -1,13 +1,34 @@
-# VTEX IO Base Component
+# Order Items
 
-This demo component shows you how to make a simple yet complete VTEX IO component.
+> Centralizes all item related requests to the Checkout API.
 
-It shows a simple demonstration of the following features:
+Any kind of item query or manipulation should be made through this component. This ensures that each interaction with the Checkout API happens in succession, avoiding concurrency issues.
 
-- Declaring a component interface in `store/interfaces.json`.
-- Declaring a schema to receive props via Storefront.
-- Using the `messages` feature to have localized strings.
-- Using an NPM package like `react-intl`
-- Using another VTEX IO App like `vtex.styleguide`.
-- Using CSS Modules to make your component customizable via CSS on a store theme.
-- Using tachyons tokens to quickly style your components.
+## Usage
+
+Use the function `useOrderItems` to get access to the API methods. Your component must be contained in a `OrderItemsProvider`, which in turn must be contained in a `OrderManagerProvider`.
+
+```tsx
+const Component: FunctionComponent = () => (
+  <OrderManagerProvider>
+    <OrderItemsProvider>
+      <MyComponent />
+    </OrderItemsProvider>
+  </OrderManagerProvider>
+)
+
+const MyComponent: FunctionComponent = () => {
+  const { itemList, updateItem } = useOrderItems()
+  // ...
+}
+```
+
+## API
+
+### `itemList: Item[]`
+
+An array containing the items in the cart.
+
+### `updateItem: (index: number, quantity: number) => Promise<void>`
+
+Changes the quantity of the item at position `index` in the `itemList` array to `quantity`. If `quantity` is `0`, the item is removed from the cart.
