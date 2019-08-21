@@ -32,6 +32,6 @@ const MyComponent: FunctionComponent = () => {
 
 An array containing the items in the cart.
 
-### `updateItem: (index: number, quantity: number) => Promise<void>`
+### `updateItem: (index: number, quantity: number) => void`
 
 Changes the quantity of the item at position `index` in the `itemList` array to `quantity`. If `quantity` is `0`, the item is removed from the cart.
