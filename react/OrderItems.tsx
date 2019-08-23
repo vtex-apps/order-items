@@ -4,6 +4,9 @@ import React, {
   FunctionComponent,
   ReactNode,
   useContext,
+  useEffect,
+  useMemo,
+  useRef,
   useState,
 } from 'react'
 import { branch, renderComponent } from 'recompose'
@@ -29,16 +32,13 @@ const OrderItemsContext = createContext<Context | undefined>(undefined)
 
 const EmptyState: FunctionComponent = ({ children }: any) => {
   const updateItem = async (_: number, __: number) => {}
+  const value = useMemo(() => ({ itemList: [], updateItem, loading: true }), [])
   return (
-    <OrderItemsContext.Provider
-      value={{ itemList: [], updateItem, loading: true }}
-    >
+    <OrderItemsContext.Provider value={value}>
       {children}
     </OrderItemsContext.Provider>
   )
 }
-
-let lastUpdateToken = { outdated: false }
 
 export const OrderItemsProvider = compose(
   graphql(ItemList, { name: 'ItemListQuery', options: { ssr: false } }),
@@ -48,53 +48,70 @@ export const OrderItemsProvider = compose(
     renderComponent(EmptyState)
   )
 )(({ children, ItemListQuery, UpdateItem }: OrderItemsProviderProps) => {
-  const { enqueue } = useOrderManager()
+  const { enqueue, listen } = useOrderManager()
 
   const [itemList, setItemList] = useState(ItemListQuery.cart.items)
 
-  const updateItem = (index: number, quantity: number) => {
-    lastUpdateToken.outdated = true
-    const token = (lastUpdateToken = { outdated: false })
+  const isQueueBusy = useRef(false)
+  useEffect(() => {
+    const unlisten = listen('Pending', () => (isQueueBusy.current = true))
+    return unlisten
+  })
+  useEffect(() => {
+    const unlisten = listen('Fulfilled', () => (isQueueBusy.current = false))
+    return unlisten
+  })
 
-    const updatedList =
-      quantity === 0
-        ? [...itemList.slice(0, index), ...itemList.slice(index + 1)]
-        : adjust(index, item => ({ ...item, quantity }), itemList)
+  const updateItem = useMemo(
+    () => (index: number, quantity: number) => {
+      const updatedList =
+        quantity === 0
+          ? [...itemList.slice(0, index), ...itemList.slice(index + 1)]
+          : adjust(index, item => ({ ...item, quantity }), itemList)
 
-    setItemList(updatedList)
+      setItemList(updatedList)
 
-    const task = async () => {
-      const {
-        data: {
-          updateItems: { items },
-        },
-      } = await UpdateItem({
-        variables: {
-          orderItems: [
-            {
-              index,
-              quantity,
-            },
-          ],
-        },
-      })
+      const task = async () => {
+        const {
+          data: {
+            updateItems: { items },
+          },
+        } = await UpdateItem({
+          variables: {
+            orderItems: [
+              {
+                index,
+                quantity,
+              },
+            ],
+          },
+        })
 
-      if (!token.outdated) {
-        setItemList(items)
+        return items
       }
-    }
 
-    enqueue(task).catch((error: any) => {
-      if (!error || error.code !== 'TASK_CANCELLED') {
-        throw error
-      }
-    })
-  }
+      enqueue(task)
+        .then((items: Item[]) => {
+          if (!isQueueBusy.current) {
+            setItemList(items)
+          }
+        })
+        .catch((error: any) => {
+          if (!error || error.code !== 'TASK_CANCELLED') {
+            throw error
+          }
+        })
+    },
+    [UpdateItem, enqueue, itemList]
+  )
+
+  const value = useMemo(() => ({ itemList, updateItem, loading: false }), [
+    itemList,
+    updateItem,
+  ])
 
   return (
-    <OrderItemsContext.Provider
-      value={{ itemList, updateItem: updateItem, loading: false }}
-    >
+    <OrderItemsContext.Provider value={value}>
       {children}
     </OrderItemsContext.Provider>
   )
