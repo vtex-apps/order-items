@@ -1,0 +1,24 @@
+mutation updateItems($orderItems: [ItemInput]) {
+  updateItems(orderItems: $orderItems) {
+    items {
+      additionalInfo {
+        brandName
+      }
+      detailUrl
+      id
+      imageUrl
+      listPrice
+      measurementUnit
+      name
+      price
+      productId
+      quantity
+      sellingPrice
+      skuName
+      skuSpecifications {
+        fieldName
+        fieldValues
+      }
+    }
+  }
+}

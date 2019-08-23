@@ -9,7 +9,10 @@ Any kind of item query or manipulation should be made through this component. Th
 Use the function `useOrderItems` to get access to the API methods. Your component must be contained in a `OrderItemsProvider`, which in turn must be contained in a `OrderManagerProvider`.
 
 ```tsx
-const Component: FunctionComponent = () => (
+import { OrderManagerProvider } from 'vtex.order-manager/OrderManager'
+import { OrderItemsProvider, useOrderItems } from 'vtex.order-items/OrderItems'
+
+const MainComponent: FunctionComponent = () => (
   <OrderManagerProvider>
     <OrderItemsProvider>
       <MyComponent />
@@ -29,6 +32,6 @@ const MyComponent: FunctionComponent = () => {
 
 An array containing the items in the cart.
 
-### `updateItem: (index: number, quantity: number) => Promise<void>`
+### `updateItem: (index: number, quantity: number) => void`
 
 Changes the quantity of the item at position `index` in the `itemList` array to `quantity`. If `quantity` is `0`, the item is removed from the cart.
