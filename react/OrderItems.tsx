@@ -3,6 +3,7 @@ import React, {
   createContext,
   FunctionComponent,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -62,8 +63,8 @@ export const OrderItemsProvider = compose(
     return unlisten
   })
 
-  const updateItem = useMemo(
-    () => (index: number, quantity: number) => {
+  const updateItem = useCallback(
+    (index: number, quantity: number) => {
       const updatedList =
         quantity === 0
           ? [...itemList.slice(0, index), ...itemList.slice(index + 1)]
