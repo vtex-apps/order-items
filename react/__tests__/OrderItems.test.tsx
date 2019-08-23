@@ -1,6 +1,6 @@
 import { adjust } from 'ramda'
 import React, { FunctionComponent } from 'react'
-import { render, fireEvent, flushPromises } from '@vtex/test-tools/react'
+import { render, fireEvent } from '@vtex/test-tools/react'
 
 import { mockItems } from '../__mocks__/mockItemList'
 import ItemList from '../graphql/itemList.graphql'
@@ -60,7 +60,7 @@ describe('OrderItems', () => {
     const { getByText } = render(<OuterComponent />, {
       graphql: { mocks: [ItemListMock] },
     })
-    await flushPromises() // waits for graphql query
+    await new Promise(resolve => setTimeout(() => resolve())) // waits for graphql query
 
     expect(getByText(mockItems[0].name)).toBeTruthy()
     expect(getByText(mockItems[1].name)).toBeTruthy()
@@ -115,13 +115,13 @@ describe('OrderItems', () => {
     const { getByText } = render(<OuterComponent />, {
       graphql: { mocks: [ItemListMock, UpdateItemMock] },
     })
-    await flushPromises() // waits for initial item query
+    await new Promise(resolve => setTimeout(() => resolve())) // waits for initial item query
 
     const button = getByText('mutate')
     fireEvent.click(button)
     expect(getByText(`${mockItems[1].name}: 123`)).toBeTruthy() // optimistic response
 
-    await flushPromises() // waits for actual mutation result
+    await new Promise(resolve => setTimeout(() => resolve())) // waits for actual mutation result
     expect(getByText(`${mockItems[1].name}: 42`)).toBeTruthy()
 
     console.error = oldConsoleError
