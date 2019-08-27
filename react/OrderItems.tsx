@@ -2,36 +2,26 @@ import { adjust } from 'ramda'
 import React, {
   createContext,
   FunctionComponent,
-  ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
-  useState,
 } from 'react'
-import { branch, renderComponent } from 'recompose'
-import { compose, graphql } from 'react-apollo'
+import { graphql } from 'react-apollo'
 import { useOrderManager } from 'vtex.order-manager/OrderManager'
 
-import ItemList from './graphql/itemList.graphql'
 import UpdateItem from './graphql/updateItem.graphql'
 
-interface Context {
-  itemList: Item[]
-  updateItem: (index: number, quantity: number) => void
-  loading: boolean
-}
+const SUBTOTAL_TOTALIZER_ID = 'Items'
 
-interface OrderItemsProviderProps {
-  children: ReactNode
-  ItemListQuery: any
-  UpdateItem: any
+interface Context {
+  updateItem: (index: number, quantity: number) => void
 }
 
 const OrderItemsContext = createContext<Context | undefined>(undefined)
 
-const EmptyState: FunctionComponent = ({ children }: any) => {
+const LoadingState: FunctionComponent = ({ children }: any) => {
   const updateItem = async (_: number, __: number) => {}
   const value = useMemo(() => ({ itemList: [], updateItem, loading: true }), [])
   return (
@@ -41,17 +31,29 @@ const EmptyState: FunctionComponent = ({ children }: any) => {
   )
 }
 
-export const OrderItemsProvider = compose(
-  graphql(ItemList, { name: 'ItemListQuery', options: { ssr: false } }),
-  graphql(UpdateItem, { name: 'UpdateItem' }),
-  branch(
-    ({ ItemListQuery }: any) => !!ItemListQuery.loading,
-    renderComponent(EmptyState)
-  )
-)(({ children, ItemListQuery, UpdateItem }: OrderItemsProviderProps) => {
-  const { enqueue, listen } = useOrderManager()
+const updateTotalizers = (totalizers: any, difference: number) => {
+  return totalizers.map((totalizer: any) => {
+    if (totalizer.id !== SUBTOTAL_TOTALIZER_ID) {
+      return totalizer
+    }
+    return { ...totalizer, value: totalizer.value + difference }
+  })
+}
 
-  const [itemList, setItemList] = useState(ItemListQuery.cart.items)
+export const OrderItemsProvider = graphql(UpdateItem, {
+  name: 'UpdateItem',
+})(({ children, UpdateItem }: any) => {
+  const {
+    enqueue,
+    listen,
+    loading,
+    orderForm,
+    setOrderForm,
+  } = useOrderManager()
+
+  if (loading) {
+    return <LoadingState>{children}</LoadingState>
+  }
 
   const isQueueBusy = useRef(false)
   useEffect(() => {
@@ -67,16 +69,26 @@ export const OrderItemsProvider = compose(
     (index: number, quantity: number) => {
       const updatedList =
         quantity === 0
-          ? [...itemList.slice(0, index), ...itemList.slice(index + 1)]
-          : adjust(index, item => ({ ...item, quantity }), itemList)
+          ? [
+              ...orderForm.items.slice(0, index),
+              ...orderForm.items.slice(index + 1),
+            ]
+          : adjust(index, item => ({ ...item, quantity }), orderForm.items)
 
-      setItemList(updatedList)
+      const subtotalDifference =
+        orderForm.items[index].price *
+        (quantity - orderForm.items[index].quantity)
+
+      setOrderForm({
+        ...orderForm,
+        totalizers: updateTotalizers(orderForm.totalizers, subtotalDifference),
+        value: orderForm.value + subtotalDifference,
+        items: updatedList,
+      })
 
       const task = async () => {
         const {
-          data: {
-            updateItems: { items },
-          },
+          data: { updateItems: newOrderForm },
         } = await UpdateItem({
           variables: {
             orderItems: [
@@ -88,13 +100,13 @@ export const OrderItemsProvider = compose(
           },
         })
 
-        return items
+        return newOrderForm
       }
 
       enqueue(task)
-        .then((items: Item[]) => {
+        .then((newOrderForm: any) => {
           if (!isQueueBusy.current) {
-            setItemList(items)
+            setOrderForm(newOrderForm)
           }
         })
         .catch((error: any) => {
@@ -103,13 +115,10 @@ export const OrderItemsProvider = compose(
           }
         })
     },
-    [UpdateItem, enqueue, itemList]
+    [enqueue, orderForm, setOrderForm, UpdateItem]
   )
 
-  const value = useMemo(() => ({ itemList, updateItem, loading: false }), [
-    itemList,
-    updateItem,
-  ])
+  const value = useMemo(() => ({ updateItem }), [updateItem])
 
   return (
     <OrderItemsContext.Provider value={value}>
