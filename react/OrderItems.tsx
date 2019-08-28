@@ -9,7 +9,8 @@ import React, {
   useRef,
 } from 'react'
 import { graphql } from 'react-apollo'
-import { useOrderManager } from 'vtex.order-manager/OrderManager'
+import { useOrderQueue } from 'vtex.order-manager/OrderQueue'
+import { useOrderForm } from 'vtex.order-manager/OrderForm'
 
 import UpdateItem from './graphql/updateItem.graphql'
 
@@ -46,10 +47,12 @@ export const OrderItemsProvider = graphql(UpdateItem, {
   const {
     enqueue,
     listen,
+  } = useOrderQueue()
+  const {
     loading,
     orderForm,
     setOrderForm,
-  } = useOrderManager()
+  } = useOrderForm()
 
   if (loading) {
     return <LoadingState>{children}</LoadingState>
