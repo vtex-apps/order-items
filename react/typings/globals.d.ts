@@ -1,3 +1,10 @@
+interface OrderForm {
+  items: Item[]
+  marketingData: MarketingData | null
+  totalizers: Totalizer[]
+  value: number
+}
+
 interface Item {
   additionalInfo: ItemAdditionalInfo
   detailUrl: string
@@ -18,7 +25,17 @@ interface ItemAdditionalInfo {
   brandName: string
 }
 
+interface MarketingData {
+  coupon: string
+}
+
 interface SKUSpecification {
   fieldName: string
   fieldValues: string[]
+}
+
+interface Totalizer {
+  id: string
+  name: string
+  value: number
 }

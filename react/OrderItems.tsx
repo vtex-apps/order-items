@@ -31,8 +31,8 @@ const LoadingState: FunctionComponent = ({ children }: any) => {
   )
 }
 
-const updateTotalizers = (totalizers: any, difference: number) => {
-  return totalizers.map((totalizer: any) => {
+const updateTotalizers = (totalizers: Totalizer[], difference: number) => {
+  return totalizers.map((totalizer: Totalizer) => {
     if (totalizer.id !== SUBTOTAL_TOTALIZER_ID) {
       return totalizer
     }
@@ -104,7 +104,7 @@ export const OrderItemsProvider = graphql(UpdateItem, {
       }
 
       enqueue(task)
-        .then((newOrderForm: any) => {
+        .then((newOrderForm: OrderForm) => {
           if (!isQueueBusy.current) {
             setOrderForm(newOrderForm)
           }
