@@ -2,14 +2,14 @@
 
 > Centralizes all item related requests to the Checkout API.
 
-Any kind of item query or manipulation should be made through this component. This ensures that each interaction with the Checkout API happens in succession, avoiding concurrency issues.
+Any kind of item manipulation should be made through this component. This ensures that each interaction with the Checkout API happens in succession, avoiding concurrency issues.
 
 ## Usage
 
 Use the function `useOrderItems` to get access to the API methods. Your component must be contained in a `OrderItemsProvider`, which in turn must be contained in a `OrderManagerProvider`.
 
 ```tsx
-import { OrderManagerProvider } from 'vtex.order-manager/OrderManager'
+import { OrderManagerProvider, useOrderManager } from 'vtex.order-manager/OrderManager'
 import { OrderItemsProvider, useOrderItems } from 'vtex.order-items/OrderItems'
 
 const MainComponent: FunctionComponent = () => (
@@ -21,16 +21,13 @@ const MainComponent: FunctionComponent = () => (
 )
 
 const MyComponent: FunctionComponent = () => {
-  const { itemList, updateItem } = useOrderItems()
+  const { orderForm: { items } } = useOrderManager()
+  const { updateItem } = useOrderItems()
   // ...
 }
 ```
 
 ## API
-
-### `itemList: Item[]`
-
-An array containing the items in the cart.
 
 ### `updateItem: (index: number, quantity: number) => void`
 

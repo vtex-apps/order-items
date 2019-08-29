@@ -20,5 +20,14 @@ mutation updateItems($orderItems: [ItemInput]) {
         fieldValues
       }
     }
+    marketingData {
+      coupon
+    }
+    totalizers {
+      id
+      name
+      value
+    }
+    value
   }
 }

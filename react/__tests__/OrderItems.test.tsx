@@ -1,24 +1,14 @@
 import { adjust } from 'ramda'
 import React, { FunctionComponent } from 'react'
 import { render, fireEvent } from '@vtex/test-tools/react'
+import {
+  OrderManagerProvider,
+  useOrderManager,
+} from 'vtex.order-manager/OrderManager'
 
-import { mockItems } from '../__mocks__/mockItemList'
-import ItemList from '../graphql/itemList.graphql'
+import { mockOrderForm } from '../__mocks__/mockOrderForm'
 import UpdateItem from '../graphql/updateItem.graphql'
 import { OrderItemsProvider, useOrderItems } from '../OrderItems'
-
-const ItemListMock = {
-  request: {
-    query: ItemList,
-  },
-  result: {
-    data: {
-      cart: {
-        items: mockItems,
-      },
-    },
-  },
-}
 
 describe('OrderItems', () => {
   it('should throw when useOrderItems is called outside a OrderItemsProvider', () => {
@@ -30,41 +20,11 @@ describe('OrderItems', () => {
       return <div>foo</div>
     }
 
-    expect(() =>
-      render(<Component />, {
-        graphql: { mocks: [ItemListMock] },
-      })
-    ).toThrow('useOrderItems must be used within a OrderItemsProvider')
-
-    console.error = oldConsoleError
-  })
-
-  it('should return a list of items when useOrderItems is called within a OrderItemsProvider', async () => {
-    const InnerComponent: FunctionComponent = () => {
-      const { itemList } = useOrderItems()
-      return (
-        <div>
-          {itemList.map((item: Item) => (
-            <div key={item.name}>{item.name}</div>
-          ))}
-        </div>
-      )
-    }
-
-    const OuterComponent: FunctionComponent = () => (
-      <OrderItemsProvider>
-        <InnerComponent />
-      </OrderItemsProvider>
+    expect(() => render(<Component />)).toThrow(
+      'useOrderItems must be used within a OrderItemsProvider'
     )
 
-    const { getByText } = render(<OuterComponent />, {
-      graphql: { mocks: [ItemListMock] },
-    })
-    await new Promise(resolve => setTimeout(() => resolve())) // waits for graphql query
-
-    expect(getByText(mockItems[0].name)).toBeTruthy()
-    expect(getByText(mockItems[1].name)).toBeTruthy()
-    expect(getByText(mockItems[2].name)).toBeTruthy()
+    console.error = oldConsoleError
   })
 
   it('should optimistically update itemList when updateItem is called', async () => {
@@ -86,17 +46,25 @@ describe('OrderItems', () => {
       result: {
         data: {
           updateItems: {
-            items: adjust(1, item => ({ ...item, quantity: 42 }), mockItems),
+            ...mockOrderForm,
+            items: adjust(
+              1,
+              item => ({ ...item, quantity: 42 }),
+              mockOrderForm.items
+            ),
           },
         },
       },
     }
 
     const InnerComponent: FunctionComponent = () => {
-      const { itemList, updateItem } = useOrderItems()
+      const {
+        orderForm: { items },
+      } = useOrderManager()
+      const { updateItem } = useOrderItems()
       return (
         <div>
-          {itemList.map((item: Item) => (
+          {items.map((item: Item) => (
             <div key={item.name}>
               {item.name}: {item.quantity}
             </div>
@@ -107,22 +75,23 @@ describe('OrderItems', () => {
     }
 
     const OuterComponent: FunctionComponent = () => (
-      <OrderItemsProvider>
-        <InnerComponent />
-      </OrderItemsProvider>
+      <OrderManagerProvider>
+        <OrderItemsProvider>
+          <InnerComponent />
+        </OrderItemsProvider>
+      </OrderManagerProvider>
     )
 
     const { getByText } = render(<OuterComponent />, {
-      graphql: { mocks: [ItemListMock, UpdateItemMock] },
+      graphql: { mocks: [UpdateItemMock] },
     })
-    await new Promise(resolve => setTimeout(() => resolve())) // waits for initial item query
 
     const button = getByText('mutate')
     fireEvent.click(button)
-    expect(getByText(`${mockItems[1].name}: 123`)).toBeTruthy() // optimistic response
+    expect(getByText(`${mockOrderForm.items[1].name}: 123`)).toBeTruthy() // optimistic response
 
     await new Promise(resolve => setTimeout(() => resolve())) // waits for actual mutation result
-    expect(getByText(`${mockItems[1].name}: 42`)).toBeTruthy()
+    expect(getByText(`${mockOrderForm.items[1].name}: 42`)).toBeTruthy()
 
     console.error = oldConsoleError
   })
