@@ -1,6 +1,6 @@
 import { adjust } from 'ramda'
 import React, { FunctionComponent } from 'react'
-import { render, fireEvent } from '@vtex/test-tools/react'
+import { act, render, fireEvent } from '@vtex/test-tools/react'
 import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
 import { OrderFormProvider, useOrderForm } from 'vtex.order-manager/OrderForm'
 import { OrderQueueProvider } from 'vtex.order-manager/OrderQueue'
@@ -26,9 +26,6 @@ describe('OrderItems', () => {
   })
 
   it('should optimistically update itemList when updateItem is called', async () => {
-    const oldConsoleError = console.error
-    console.error = () => {}
-
     const UpdateItemMock = {
       request: {
         query: UpdateItem,
@@ -67,7 +64,9 @@ describe('OrderItems', () => {
               {item.name}: {item.quantity}
             </div>
           ))}
-          <button onClick={() => updateItem(1, 123)}>mutate</button>
+          <button onClick={() => updateItem({ index: 1, quantity: 123 })}>
+            mutate
+          </button>
         </div>
       )
     }
@@ -87,12 +86,89 @@ describe('OrderItems', () => {
     })
 
     const button = getByText('mutate')
-    fireEvent.click(button)
+
+    act(() => {
+      fireEvent.click(button)
+    })
     expect(getByText(`${mockOrderForm.items[1].name}: 123`)).toBeTruthy() // optimistic response
 
-    await new Promise(resolve => setTimeout(() => resolve())) // waits for actual mutation result
+    await act(async () => new Promise(resolve => setTimeout(() => resolve()))) // waits for actual mutation result
     expect(getByText(`${mockOrderForm.items[1].name}: 42`)).toBeTruthy()
+  })
 
-    console.error = oldConsoleError
+  it('should update itemList when updateItemWithId is called', async () => {
+    const UpdateItemMock = {
+      request: {
+        query: UpdateItem,
+        variables: {
+          orderItems: [
+            {
+              uniqueId: mockOrderForm.items[0].uniqueId,
+              quantity: 7,
+            },
+          ],
+        },
+      },
+      result: {
+        data: {
+          updateItems: {
+            ...mockOrderForm,
+            items: adjust(
+              0,
+              item => ({ ...item, quantity: 7 }),
+              mockOrderForm.items
+            ),
+          },
+        },
+      },
+    }
+
+    const InnerComponent: FunctionComponent = () => {
+      const {
+        orderForm: { items },
+      } = useOrderForm()
+      const { updateItem } = useOrderItems()
+      return (
+        <div>
+          {items.map((item: Item) => (
+            <div key={item.name}>
+              {item.name}: {item.quantity}
+            </div>
+          ))}
+          <button
+            onClick={() =>
+              updateItem({
+                uniqueId: mockOrderForm.items[0].uniqueId,
+                quantity: 7,
+              })
+            }
+          >
+            mutate
+          </button>
+        </div>
+      )
+    }
+
+    const OuterComponent: FunctionComponent = () => (
+      <OrderQueueProvider>
+        <OrderFormProvider>
+          <OrderItemsProvider>
+            <InnerComponent />
+          </OrderItemsProvider>
+        </OrderFormProvider>
+      </OrderQueueProvider>
+    )
+
+    const { getByText } = render(<OuterComponent />, {
+      graphql: { mocks: [UpdateItemMock] },
+    })
+
+    const button = getByText('mutate')
+
+    await act(async () => {
+      fireEvent.click(button)
+      await new Promise(resolve => setTimeout(() => resolve())) // waits for mutation result
+    })
+    expect(getByText(`${mockOrderForm.items[0].name}: 7`)).toBeTruthy()
   })
 })
