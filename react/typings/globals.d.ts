@@ -7,9 +7,11 @@ interface OrderForm {
 
 interface Item {
   additionalInfo: ItemAdditionalInfo
+  availability: string
   detailUrl: string
   id: string
   imageUrl: string
+  index?: number
   listPrice: number
   measurementUnit: string
   name: string
@@ -19,6 +21,7 @@ interface Item {
   sellingPrice: number
   skuName: string
   skuSpecifications: SKUSpecification[]
+  uniqueId: string
 }
 
 interface ItemAdditionalInfo {

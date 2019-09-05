@@ -29,6 +29,26 @@ const MyComponent: FunctionComponent = () => {
 
 ## API
 
-### `updateItem: (index: number, quantity: number) => void`
+### `updateItem: (props: Partial<Item>) => void`
 
-Changes the quantity of the item at position `index` in the `itemList` array to `quantity`. If `quantity` is `0`, the item is removed from the cart.
+Updates an item in the order form. Only properties present in `props` will be changed.
+
+The item is identified either by its `index` in the order form array or its `uniqueId`. One of those properties must be present in `props`. If both are present, `index` will be used to identify the object and `uniqueId` is ignored.
+
+#### Examples
+
+- Removing the third item from the cart:
+```tsx
+updateItem({
+  index: 2,
+  quantity: 0,
+})
+```
+
+- Changing an item's price:
+```tsx
+updateItem({
+  uniqueId: 'E1FDB9F661D74543AE3A13D587641E63',
+  price: 19000,
+})
+```

@@ -4,6 +4,7 @@ export const mockOrderForm = {
       additionalInfo: {
         brandName: 'Test Brand 0',
       },
+      availability: 'available',
       id: '1',
       detailUrl: '/work-shirt/p',
       imageUrl:
@@ -17,11 +18,13 @@ export const mockOrderForm = {
       sellingPrice: 2400000,
       skuName: 'Test SKU 0',
       skuSpecifications: [],
+      uniqueId: 'SomeUniqueId0',
     },
     {
       additionalInfo: {
         brandName: 'Test Brand 1',
       },
+      availability: 'available',
       id: '30',
       detailUrl: '/long-sleeve-shirt/p',
       imageUrl:
@@ -35,11 +38,13 @@ export const mockOrderForm = {
       sellingPrice: 945000,
       skuName: 'Test SKU 1',
       skuSpecifications: [],
+      uniqueId: 'SomeUniqueId1',
     },
     {
       additionalInfo: {
         brandName: 'Test Brand 2',
       },
+      availability: 'withoutStock',
       id: '2000535',
       detailUrl: '/classy--sunglasses/p',
       imageUrl:
@@ -53,6 +58,7 @@ export const mockOrderForm = {
       sellingPrice: 360000,
       skuName: 'Test SKU 2',
       skuSpecifications: [],
+      uniqueId: 'SomeUniqueId2',
     },
   ],
   marketingData: null,

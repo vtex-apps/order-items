@@ -1,4 +1,3 @@
-import { adjust } from 'ramda'
 import React, {
   createContext,
   FunctionComponent,
@@ -16,13 +15,13 @@ import { useOrderForm } from 'vtex.order-manager/OrderForm'
 const SUBTOTAL_TOTALIZER_ID = 'Items'
 
 interface Context {
-  updateItem: (index: number, quantity: number) => void
+  updateItem: (props: Partial<Item>) => void
 }
 
 const OrderItemsContext = createContext<Context | undefined>(undefined)
 
 const LoadingState: FunctionComponent = ({ children }: any) => {
-  const updateItem = async (_: number, __: number) => {}
+  const updateItem = async (_: Partial<Item>) => {}
   const value = useMemo(() => ({ itemList: [], updateItem, loading: true }), [])
   return (
     <OrderItemsContext.Provider value={value}>
@@ -61,18 +60,33 @@ export const OrderItemsProvider = graphql(UpdateItem, {
   })
 
   const updateItem = useCallback(
-    (index: number, quantity: number) => {
-      const updatedList =
-        quantity === 0
-          ? [
-              ...orderForm.items.slice(0, index),
-              ...orderForm.items.slice(index + 1),
-            ]
-          : adjust(index, item => ({ ...item, quantity }), orderForm.items)
+    (props: Partial<Item>) => {
+      let index = props.index
 
-      const subtotalDifference =
-        orderForm.items[index].price *
-        (quantity - orderForm.items[index].quantity)
+      if (!index) {
+        if (!props.uniqueId) {
+          throw new Error(
+            'Either index or uniqueId must be provided to updateItem'
+          )
+        }
+
+        index = orderForm.items.findIndex(
+          (item: Item) => item.uniqueId === props.uniqueId
+        ) as number
+      }
+
+      const newItem = { ...orderForm.items[index], ...props }
+
+      const updatedList = [
+        ...orderForm.items.slice(0, index),
+        ...(props.quantity === 0 ? [] : [newItem]),
+        ...orderForm.items.slice(index + 1),
+      ]
+
+      const oldValue =
+        orderForm.items[index].price * orderForm.items[index].quantity
+      const newValue = newItem.price * newItem.quantity
+      const subtotalDifference = newValue - oldValue
 
       setOrderForm({
         ...orderForm,
@@ -86,12 +100,7 @@ export const OrderItemsProvider = graphql(UpdateItem, {
           data: { updateItems: newOrderForm },
         } = await UpdateItem({
           variables: {
-            orderItems: [
-              {
-                index,
-                quantity,
-              },
-            ],
+            orderItems: [props],
           },
         })
 
