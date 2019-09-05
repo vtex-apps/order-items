@@ -1,13 +1,11 @@
 import { adjust } from 'ramda'
 import React, { FunctionComponent } from 'react'
 import { render, fireEvent } from '@vtex/test-tools/react'
-import {
-  OrderManagerProvider,
-  useOrderManager,
-} from 'vtex.order-manager/OrderManager'
+import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
+import { OrderFormProvider, useOrderForm } from 'vtex.order-manager/OrderForm'
+import { OrderQueueProvider } from 'vtex.order-manager/OrderQueue'
 
 import { mockOrderForm } from '../__mocks__/mockOrderForm'
-import UpdateItem from '../graphql/updateItem.graphql'
 import { OrderItemsProvider, useOrderItems } from '../OrderItems'
 
 describe('OrderItems', () => {
@@ -60,7 +58,7 @@ describe('OrderItems', () => {
     const InnerComponent: FunctionComponent = () => {
       const {
         orderForm: { items },
-      } = useOrderManager()
+      } = useOrderForm()
       const { updateItem } = useOrderItems()
       return (
         <div>
@@ -75,11 +73,13 @@ describe('OrderItems', () => {
     }
 
     const OuterComponent: FunctionComponent = () => (
-      <OrderManagerProvider>
-        <OrderItemsProvider>
-          <InnerComponent />
-        </OrderItemsProvider>
-      </OrderManagerProvider>
+      <OrderQueueProvider>
+        <OrderFormProvider>
+          <OrderItemsProvider>
+            <InnerComponent />
+          </OrderItemsProvider>
+        </OrderFormProvider>
+      </OrderQueueProvider>
     )
 
     const { getByText } = render(<OuterComponent />, {

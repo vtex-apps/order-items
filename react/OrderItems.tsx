@@ -9,10 +9,9 @@ import React, {
   useRef,
 } from 'react'
 import { graphql } from 'react-apollo'
+import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
 import { useOrderQueue } from 'vtex.order-manager/OrderQueue'
 import { useOrderForm } from 'vtex.order-manager/OrderForm'
-
-import UpdateItem from './graphql/updateItem.graphql'
 
 const SUBTOTAL_TOTALIZER_ID = 'Items'
 
@@ -44,15 +43,8 @@ const updateTotalizers = (totalizers: Totalizer[], difference: number) => {
 export const OrderItemsProvider = graphql(UpdateItem, {
   name: 'UpdateItem',
 })(({ children, UpdateItem }: any) => {
-  const {
-    enqueue,
-    listen,
-  } = useOrderQueue()
-  const {
-    loading,
-    orderForm,
-    setOrderForm,
-  } = useOrderForm()
+  const { enqueue, listen } = useOrderQueue()
+  const { loading, orderForm, setOrderForm } = useOrderForm()
 
   if (loading) {
     return <LoadingState>{children}</LoadingState>

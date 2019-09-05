@@ -3,22 +3,18 @@ import React, { createContext, FC, useContext, useMemo, useState } from 'react'
 import { mockOrderForm } from '../mockOrderForm'
 
 interface Context {
-  enqueue: (_: any) => Promise<any>
-  listen: () => () => void
   loading: boolean
   orderForm: any
   setOrderForm: (_: any) => void
 }
 
-const OrderManagerContext = createContext<Context | undefined>(undefined)
+const OrderFormContext = createContext<Context | undefined>(undefined)
 
-export const OrderManagerProvider: FC = ({ children }: any) => {
+export const OrderFormProvider: FC = ({ children }: any) => {
   const [orderForm, setOrderForm] = useState(mockOrderForm)
 
   const value = useMemo(
     () => ({
-      enqueue: async (f: any) => f(),
-      listen: () => () => {},
       loading: false,
       orderForm,
       setOrderForm,
@@ -27,12 +23,12 @@ export const OrderManagerProvider: FC = ({ children }: any) => {
   )
 
   return (
-    <OrderManagerContext.Provider value={value}>
+    <OrderFormContext.Provider value={value}>
       {children}
-    </OrderManagerContext.Provider>
+    </OrderFormContext.Provider>
   )
 }
 
-export const useOrderManager = () => {
-  return useContext(OrderManagerContext)
+export const useOrderForm = () => {
+  return useContext(OrderFormContext)
 }

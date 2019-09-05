@@ -11,7 +11,7 @@
   "mustUpdateAt": "2019-04-02",
   "dependencies": {
     "vtex.order-manager": "0.x",
-    "vtex.checkout-graphql": "0.x"
+    "vtex.checkout-resources": "0.x"
   },
   "$schema": "https://raw.githubusercontent.com/vtex/node-vtex-api/master/gen/manifest.schema"
 }
