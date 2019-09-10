@@ -52,3 +52,7 @@ updateItem({
   price: 19000,
 })
 ```
+
+### `debouncedUpdateItem: (props: Partial<Item>) => void`
+
+Debounced version of `updateItem`. It updates the local order form immediately but postpones the execution of the update request until after 300ms has elapsed since the last call to the function. All requests from previous calls to this function in the meantime are ignored.

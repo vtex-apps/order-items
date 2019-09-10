@@ -8,21 +8,34 @@ import React, {
   useRef,
 } from 'react'
 import { graphql } from 'react-apollo'
+import debounce from 'debounce'
+import { memoizeWith } from 'ramda'
 import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
 import { useOrderQueue } from 'vtex.order-manager/OrderQueue'
 import { useOrderForm } from 'vtex.order-manager/OrderForm'
 
 const SUBTOTAL_TOTALIZER_ID = 'Items'
+const DEBOUNCE_TIME_MS = 300
 
 interface Context {
   updateItem: (props: Partial<Item>) => void
+  debouncedUpdateItem: (props: Partial<Item>) => void
 }
 
 const OrderItemsContext = createContext<Context | undefined>(undefined)
 
 const LoadingState: FunctionComponent = ({ children }: any) => {
   const updateItem = async (_: Partial<Item>) => {}
-  const value = useMemo(() => ({ itemList: [], updateItem, loading: true }), [])
+  const debouncedUpdateItem = async (_: Partial<Item>) => {}
+  const value = useMemo(
+    () => ({
+      itemList: [],
+      updateItem,
+      debouncedUpdateItem,
+      loading: true,
+    }),
+    []
+  )
   return (
     <OrderItemsContext.Provider value={value}>
       {children}
@@ -38,6 +51,37 @@ const updateTotalizers = (totalizers: Totalizer[], difference: number) => {
     return { ...totalizer, value: totalizer.value + difference }
   })
 }
+
+const enqueueTask = ({
+  task,
+  enqueue,
+  isQueueBusy,
+  setOrderForm,
+  uniqueId,
+}: {
+  task: () => Promise<any>
+  enqueue: (task: any, id?: string) => Promise<any>
+  isQueueBusy: any
+  setOrderForm: (orderForm: Partial<OrderForm>) => void
+  uniqueId: string
+}) => {
+  enqueue(task, `updateItem-${uniqueId}`)
+    .then((newOrderForm: OrderForm) => {
+      if (!isQueueBusy.current) {
+        setOrderForm(newOrderForm)
+      }
+    })
+    .catch((error: any) => {
+      if (!error || error.code !== 'TASK_CANCELLED') {
+        throw error
+      }
+    })
+}
+
+const debouncedEnqueueTask = memoizeWith(
+  (uniqueId: string) => uniqueId,
+  (_: string) => debounce(enqueueTask, DEBOUNCE_TIME_MS)
+)
 
 export const OrderItemsProvider = graphql(UpdateItem, {
   name: 'UpdateItem',
@@ -59,22 +103,27 @@ export const OrderItemsProvider = graphql(UpdateItem, {
     return unlisten
   })
 
-  const updateItem = useCallback(
+  const itemIndex = useCallback(
     (props: Partial<Item>) => {
-      let index = props.index
-
-      if (!index) {
-        if (!props.uniqueId) {
-          throw new Error(
-            'Either index or uniqueId must be provided to updateItem'
-          )
-        }
-
-        index = orderForm.items.findIndex(
-          (item: Item) => item.uniqueId === props.uniqueId
-        ) as number
+      if (props.index) {
+        return props.index
       }
 
+      if (!props.uniqueId) {
+        throw new Error(
+          'Either index or uniqueId must be provided when updating an item'
+        )
+      }
+
+      return orderForm.items.findIndex(
+        (item: Item) => item.uniqueId === props.uniqueId
+      ) as number
+    },
+    [orderForm.items]
+  )
+
+  const updateOrderForm = useCallback(
+    (index: number, props: Partial<Item>) => {
       const newItem = { ...orderForm.items[index], ...props }
 
       const updatedList = [
@@ -94,35 +143,73 @@ export const OrderItemsProvider = graphql(UpdateItem, {
         value: orderForm.value + subtotalDifference,
         items: updatedList,
       })
-
-      const task = async () => {
-        const {
-          data: { updateItems: newOrderForm },
-        } = await UpdateItem({
-          variables: {
-            orderItems: [props],
-          },
-        })
-
-        return newOrderForm
-      }
-
-      enqueue(task)
-        .then((newOrderForm: OrderForm) => {
-          if (!isQueueBusy.current) {
-            setOrderForm(newOrderForm)
-          }
-        })
-        .catch((error: any) => {
-          if (!error || error.code !== 'TASK_CANCELLED') {
-            throw error
-          }
-        })
     },
-    [enqueue, orderForm, setOrderForm, UpdateItem]
+    [orderForm, setOrderForm]
   )
 
-  const value = useMemo(() => ({ updateItem }), [updateItem])
+  const mutationTask = useCallback(
+    (props: Partial<Item>) => async () => {
+      const {
+        data: { updateItems: newOrderForm },
+      } = await UpdateItem({
+        variables: {
+          orderItems: [props],
+        },
+      })
+
+      return newOrderForm
+    },
+    [UpdateItem]
+  )
+
+  const updateItem = useCallback(
+    (props: Partial<Item>) => {
+      const index = itemIndex(props)
+      updateOrderForm(index, props)
+      enqueueTask({
+        task: mutationTask(props),
+        enqueue,
+        isQueueBusy,
+        setOrderForm,
+        uniqueId: orderForm.items[index].uniqueId,
+      })
+    },
+    [
+      enqueue,
+      itemIndex,
+      mutationTask,
+      orderForm.items,
+      setOrderForm,
+      updateOrderForm,
+    ]
+  )
+
+  const debouncedUpdateItem = useCallback(
+    (props: Partial<Item>) => {
+      const index = itemIndex(props)
+      updateOrderForm(index, props)
+      debouncedEnqueueTask(orderForm.items[index].uniqueId)({
+        task: mutationTask(props),
+        enqueue,
+        isQueueBusy,
+        setOrderForm,
+        uniqueId: orderForm.items[index].uniqueId,
+      })
+    },
+    [
+      enqueue,
+      itemIndex,
+      mutationTask,
+      orderForm.items,
+      setOrderForm,
+      updateOrderForm,
+    ]
+  )
+
+  const value = useMemo(() => ({ updateItem, debouncedUpdateItem }), [
+    updateItem,
+    debouncedUpdateItem,
+  ])
 
   return (
     <OrderItemsContext.Provider value={value}>

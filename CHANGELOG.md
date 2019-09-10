@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- `debouncedUpdateItem` function to the API.
+
 ## [0.3.1] - 2019-09-10
+
+### Changed
+
+- Moved `README.md` to `/docs` folder to comply with VTEX IO docs format.
 
 ## [0.3.0] - 2019-09-05
 
