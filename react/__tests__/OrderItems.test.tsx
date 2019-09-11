@@ -1,5 +1,5 @@
 import { adjust } from 'ramda'
-import React, { FunctionComponent } from 'react'
+import React, { FunctionComponent, useEffect } from 'react'
 import { act, render, fireEvent } from '@vtex/test-tools/react'
 import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
 import { OrderFormProvider, useOrderForm } from 'vtex.order-manager/OrderForm'
@@ -96,7 +96,7 @@ describe('OrderItems', () => {
     expect(getByText(`${mockOrderForm.items[1].name}: 42`)).toBeTruthy()
   })
 
-  it('should update itemList when updateItemWithId is called', async () => {
+  it('should update itemList when updateItem is called with uniqueId', async () => {
     const UpdateItemMock = {
       request: {
         query: UpdateItem,
@@ -170,5 +170,62 @@ describe('OrderItems', () => {
       await new Promise(resolve => setTimeout(() => resolve())) // waits for mutation result
     })
     expect(getByText(`${mockOrderForm.items[0].name}: 7`)).toBeTruthy()
+  })
+
+  it('should update itemList when debouncedUpdateItem is called', async () => {
+    const UpdateItemMock = {
+      request: {
+        query: UpdateItem,
+        variables: {
+          orderItems: [
+            {
+              uniqueId: mockOrderForm.items[0].uniqueId,
+              quantity: 7,
+            },
+          ],
+        },
+      },
+      result: {
+        data: {
+          updateItems: {
+            ...mockOrderForm,
+            items: adjust(
+              0,
+              item => ({ ...item, quantity: 7 }),
+              mockOrderForm.items
+            ),
+          },
+        },
+      },
+    }
+
+    const Component: FunctionComponent = () => {
+      const {
+        orderForm: { items },
+      } = useOrderForm()
+      const { debouncedUpdateItem } = useOrderItems()
+
+      useEffect(() => {
+        debouncedUpdateItem({
+          uniqueId: items[0].uniqueId,
+          quantity: 7,
+        })
+      }, [])
+
+      return <div>{items[0].quantity}</div>
+    }
+
+    const { queryByText } = render(
+      <OrderQueueProvider>
+        <OrderFormProvider>
+          <OrderItemsProvider>
+            <Component />
+          </OrderItemsProvider>
+        </OrderFormProvider>
+      </OrderQueueProvider>,
+      { graphql: { mocks: [UpdateItemMock] } }
+    )
+
+    expect(queryByText('7')).toBeTruthy()
   })
 })
