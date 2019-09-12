@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-### Added
+### Changed
 
-- `debouncedUpdateItem` function to the API.
+- `updateItem` function has been split into `updateQuantity` and `removeItem`, and both functions are debounced.
 
 ## [0.3.1] - 2019-09-10
 

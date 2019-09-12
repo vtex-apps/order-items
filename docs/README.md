@@ -29,30 +29,29 @@ const MyComponent: FunctionComponent = () => {
 
 ## API
 
-### `updateItem: (props: Partial<Item>) => void`
+### `updateQuantity: (props: { uniqueId?: string, index?: number, quantity: number }) => void`
 
-Updates an item in the order form. Only properties present in `props` will be changed.
+Updates the quantity of an item in the order form. `props` must contain either the `uniqueId` or `index` of the item to be updated as well as the desired `quantity`.
 
-The item is identified either by its `index` in the order form array or its `uniqueId`. One of those properties must be present in `props`. If both are present, `index` will be used to identify the object and `uniqueId` is ignored.
+This function has a debounce timeout of 300 milliseconds.
 
-#### Examples
+#### Example
 
-- Removing the third item from the cart:
-```tsx
-updateItem({
-  index: 2,
-  quantity: 0,
-})
-```
-
-- Changing an item's price:
 ```tsx
 updateItem({
   uniqueId: 'E1FDB9F661D74543AE3A13D587641E63',
-  price: 19000,
+  quantity: 3,
 })
 ```
 
-### `debouncedUpdateItem: (props: Partial<Item>) => void`
+### `removeItem: (props: { uniqueId?: string, index?: number }) => void`
 
-Debounced version of `updateItem`. It updates the local order form immediately but postpones the execution of the update request until after 300ms has elapsed since the last call to the function. All requests from previous calls to this function in the meantime are ignored.
+Removes an item from the cart. `props` must contain either the `uniqueId` or `index` of the item to be removed.
+
+This function has a debounce timeout of 300 milliseconds.
+
+#### Example
+
+```tsx
+removeItem({ uniqueId: 'E1FDB9F661D74543AE3A13D587641E63' })
+```
