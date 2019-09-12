@@ -1,5 +1,5 @@
 import { adjust } from 'ramda'
-import React, { FunctionComponent, useEffect } from 'react'
+import React, { FunctionComponent } from 'react'
 import { act, render, fireEvent } from '@vtex/test-tools/react'
 import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
 import { OrderFormProvider, useOrderForm } from 'vtex.order-manager/OrderForm'
@@ -7,6 +7,26 @@ import { OrderQueueProvider } from 'vtex.order-manager/OrderQueue'
 
 import { mockOrderForm } from '../__mocks__/mockOrderForm'
 import { OrderItemsProvider, useOrderItems } from '../OrderItems'
+
+const mockUpdateItemMutation = (
+  args: Partial<Item>[],
+  result: Partial<Item>[]
+) => ({
+  request: {
+    query: UpdateItem,
+    variables: {
+      orderItems: args,
+    },
+  },
+  result: {
+    data: {
+      updateItems: {
+        ...mockOrderForm,
+        items: result,
+      },
+    },
+  },
+})
 
 describe('OrderItems', () => {
   it('should throw when useOrderItems is called outside a OrderItemsProvider', () => {
@@ -25,38 +45,12 @@ describe('OrderItems', () => {
     console.error = oldConsoleError
   })
 
-  it('should optimistically update itemList when updateItem is called', async () => {
-    const UpdateItemMock = {
-      request: {
-        query: UpdateItem,
-        variables: {
-          orderItems: [
-            {
-              index: 1,
-              quantity: 123,
-            },
-          ],
-        },
-      },
-      result: {
-        data: {
-          updateItems: {
-            ...mockOrderForm,
-            items: adjust(
-              1,
-              item => ({ ...item, quantity: 42 }),
-              mockOrderForm.items
-            ),
-          },
-        },
-      },
-    }
-
-    const InnerComponent: FunctionComponent = () => {
+  it('should optimistically update itemList when updateQuantity is called', async () => {
+    const Component: FunctionComponent = () => {
       const {
         orderForm: { items },
       } = useOrderForm()
-      const { updateItem } = useOrderItems()
+      const { updateQuantity } = useOrderItems()
       return (
         <div>
           {items.map((item: Item) => (
@@ -64,26 +58,32 @@ describe('OrderItems', () => {
               {item.name}: {item.quantity}
             </div>
           ))}
-          <button onClick={() => updateItem({ index: 1, quantity: 123 })}>
+          <button onClick={() => updateQuantity({ index: 1, quantity: 123 })}>
             mutate
           </button>
         </div>
       )
     }
 
-    const OuterComponent: FunctionComponent = () => (
+    const mockUpdateItem = mockUpdateItemMutation(
+      [{ uniqueId: mockOrderForm.items[1].uniqueId, quantity: 123 }],
+      adjust(
+        1,
+        (item: Item) => ({ ...item, quantity: 42 }),
+        mockOrderForm.items
+      )
+    )
+
+    const { getByText } = render(
       <OrderQueueProvider>
         <OrderFormProvider>
           <OrderItemsProvider>
-            <InnerComponent />
+            <Component />
           </OrderItemsProvider>
         </OrderFormProvider>
-      </OrderQueueProvider>
+      </OrderQueueProvider>,
+      { graphql: { mocks: [mockUpdateItem] } }
     )
-
-    const { getByText } = render(<OuterComponent />, {
-      graphql: { mocks: [UpdateItemMock] },
-    })
 
     const button = getByText('mutate')
 
@@ -92,42 +92,16 @@ describe('OrderItems', () => {
     })
     expect(getByText(`${mockOrderForm.items[1].name}: 123`)).toBeTruthy() // optimistic response
 
-    await act(async () => new Promise(resolve => setTimeout(() => resolve()))) // waits for actual mutation result
+    await act(() => new Promise(resolve => setTimeout(() => resolve()))) // waits for actual mutation result
     expect(getByText(`${mockOrderForm.items[1].name}: 42`)).toBeTruthy()
   })
 
-  it('should update itemList when updateItem is called with uniqueId', async () => {
-    const UpdateItemMock = {
-      request: {
-        query: UpdateItem,
-        variables: {
-          orderItems: [
-            {
-              uniqueId: mockOrderForm.items[0].uniqueId,
-              quantity: 7,
-            },
-          ],
-        },
-      },
-      result: {
-        data: {
-          updateItems: {
-            ...mockOrderForm,
-            items: adjust(
-              0,
-              item => ({ ...item, quantity: 7 }),
-              mockOrderForm.items
-            ),
-          },
-        },
-      },
-    }
-
-    const InnerComponent: FunctionComponent = () => {
+  it('should optimistically update itemList when removeItem is called', async () => {
+    const Component: FunctionComponent = () => {
       const {
         orderForm: { items },
       } = useOrderForm()
-      const { updateItem } = useOrderItems()
+      const { removeItem } = useOrderItems()
       return (
         <div>
           {items.map((item: Item) => (
@@ -137,10 +111,7 @@ describe('OrderItems', () => {
           ))}
           <button
             onClick={() =>
-              updateItem({
-                uniqueId: mockOrderForm.items[0].uniqueId,
-                quantity: 7,
-              })
+              removeItem({ uniqueId: mockOrderForm.items[0].uniqueId })
             }
           >
             mutate
@@ -149,73 +120,12 @@ describe('OrderItems', () => {
       )
     }
 
-    const OuterComponent: FunctionComponent = () => (
-      <OrderQueueProvider>
-        <OrderFormProvider>
-          <OrderItemsProvider>
-            <InnerComponent />
-          </OrderItemsProvider>
-        </OrderFormProvider>
-      </OrderQueueProvider>
+    const mockUpdateItem = mockUpdateItemMutation(
+      [{ uniqueId: mockOrderForm.items[0].uniqueId, quantity: 0 }],
+      adjust(0, (item: Item) => ({ ...item, quantity: 7 }), mockOrderForm.items)
     )
 
-    const { getByText } = render(<OuterComponent />, {
-      graphql: { mocks: [UpdateItemMock] },
-    })
-
-    const button = getByText('mutate')
-
-    await act(async () => {
-      fireEvent.click(button)
-      await new Promise(resolve => setTimeout(() => resolve())) // waits for mutation result
-    })
-    expect(getByText(`${mockOrderForm.items[0].name}: 7`)).toBeTruthy()
-  })
-
-  it('should update itemList when debouncedUpdateItem is called', async () => {
-    const UpdateItemMock = {
-      request: {
-        query: UpdateItem,
-        variables: {
-          orderItems: [
-            {
-              uniqueId: mockOrderForm.items[0].uniqueId,
-              quantity: 7,
-            },
-          ],
-        },
-      },
-      result: {
-        data: {
-          updateItems: {
-            ...mockOrderForm,
-            items: adjust(
-              0,
-              item => ({ ...item, quantity: 7 }),
-              mockOrderForm.items
-            ),
-          },
-        },
-      },
-    }
-
-    const Component: FunctionComponent = () => {
-      const {
-        orderForm: { items },
-      } = useOrderForm()
-      const { debouncedUpdateItem } = useOrderItems()
-
-      useEffect(() => {
-        debouncedUpdateItem({
-          uniqueId: items[0].uniqueId,
-          quantity: 7,
-        })
-      }, [])
-
-      return <div>{items[0].quantity}</div>
-    }
-
-    const { queryByText } = render(
+    const { getByText, queryByText } = render(
       <OrderQueueProvider>
         <OrderFormProvider>
           <OrderItemsProvider>
@@ -223,9 +133,23 @@ describe('OrderItems', () => {
           </OrderItemsProvider>
         </OrderFormProvider>
       </OrderQueueProvider>,
-      { graphql: { mocks: [UpdateItemMock] } }
+      { graphql: { mocks: [mockUpdateItem] } }
     )
 
-    expect(queryByText('7')).toBeTruthy()
+    const button = getByText('mutate')
+
+    act(() => {
+      fireEvent.click(button)
+    })
+    expect(
+      queryByText(
+        (_, element) =>
+          !!element.textContent &&
+          element.textContent.includes(mockOrderForm.items[0].name)
+      )
+    ).toBeFalsy() // optimistic response
+
+    await act(() => new Promise(resolve => setTimeout(() => resolve()))) // waits for actual mutation result
+    expect(getByText(`${mockOrderForm.items[0].name}: 7`)).toBeTruthy()
   })
 })
