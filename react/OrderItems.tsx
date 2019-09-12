@@ -18,20 +18,20 @@ const SUBTOTAL_TOTALIZER_ID = 'Items'
 const DEBOUNCE_TIME_MS = 300
 
 interface Context {
-  updateItem: (props: Partial<Item>) => void
-  debouncedUpdateItem: (props: Partial<Item>) => void
+  updateQuantity: (props: Partial<Item>) => void
+  removeItem: (props: Partial<Item>) => void
 }
 
 const OrderItemsContext = createContext<Context | undefined>(undefined)
 
+const noop = async (_: Partial<Item>) => {}
+
 const LoadingState: FunctionComponent = ({ children }: any) => {
-  const updateItem = async (_: Partial<Item>) => {}
-  const debouncedUpdateItem = async (_: Partial<Item>) => {}
   const value = useMemo(
     () => ({
       itemList: [],
-      updateItem,
-      debouncedUpdateItem,
+      updateQuantity: noop,
+      removeItem: noop,
       loading: true,
     }),
     []
@@ -57,15 +57,15 @@ const enqueueTask = ({
   enqueue,
   isQueueBusy,
   setOrderForm,
-  uniqueId,
+  taskId,
 }: {
   task: () => Promise<any>
   enqueue: (task: any, id?: string) => Promise<any>
   isQueueBusy: any
   setOrderForm: (orderForm: Partial<OrderForm>) => void
-  uniqueId: string
+  taskId?: string
 }) => {
-  enqueue(task, `updateItem-${uniqueId}`)
+  enqueue(task, taskId)
     .then((newOrderForm: OrderForm) => {
       if (!isQueueBusy.current) {
         setOrderForm(newOrderForm)
@@ -79,7 +79,7 @@ const enqueueTask = ({
 }
 
 const debouncedEnqueueTask = memoizeWith(
-  (uniqueId: string) => uniqueId,
+  (taskId: string) => taskId,
   (_: string) => debounce(enqueueTask, DEBOUNCE_TIME_MS)
 )
 
@@ -103,21 +103,24 @@ export const OrderItemsProvider = graphql(UpdateItem, {
     return unlisten
   })
 
-  const itemIndex = useCallback(
+  const itemIds = useCallback(
     (props: Partial<Item>) => {
-      if (props.index) {
-        return props.index
-      }
+      let index = props.index
+      let uniqueId = props.uniqueId
 
-      if (!props.uniqueId) {
+      if (index) {
+        uniqueId = orderForm.items[index].uniqueId as string
+      } else if (uniqueId) {
+        index = orderForm.items.findIndex(
+          (item: Item) => item.uniqueId === props.uniqueId
+        ) as number
+      } else {
         throw new Error(
           'Either index or uniqueId must be provided when updating an item'
         )
       }
 
-      return orderForm.items.findIndex(
-        (item: Item) => item.uniqueId === props.uniqueId
-      ) as number
+      return { index, uniqueId }
     },
     [orderForm.items]
   )
@@ -162,53 +165,30 @@ export const OrderItemsProvider = graphql(UpdateItem, {
     [UpdateItem]
   )
 
-  const updateItem = useCallback(
+  const updateQuantity = useCallback(
     (props: Partial<Item>) => {
-      const index = itemIndex(props)
-      updateOrderForm(index, props)
-      enqueueTask({
-        task: mutationTask(props),
+      const { index, uniqueId } = itemIds(props)
+      updateOrderForm(index, { quantity: props.quantity })
+      const taskId = `updateQuantity-${uniqueId}`
+      debouncedEnqueueTask(taskId)({
+        task: mutationTask({ uniqueId, quantity: props.quantity }),
         enqueue,
         isQueueBusy,
         setOrderForm,
-        uniqueId: orderForm.items[index].uniqueId,
+        taskId,
       })
     },
-    [
-      enqueue,
-      itemIndex,
-      mutationTask,
-      orderForm.items,
-      setOrderForm,
-      updateOrderForm,
-    ]
+    [enqueue, itemIds, mutationTask, setOrderForm, updateOrderForm]
   )
 
-  const debouncedUpdateItem = useCallback(
-    (props: Partial<Item>) => {
-      const index = itemIndex(props)
-      updateOrderForm(index, props)
-      debouncedEnqueueTask(orderForm.items[index].uniqueId)({
-        task: mutationTask(props),
-        enqueue,
-        isQueueBusy,
-        setOrderForm,
-        uniqueId: orderForm.items[index].uniqueId,
-      })
-    },
-    [
-      enqueue,
-      itemIndex,
-      mutationTask,
-      orderForm.items,
-      setOrderForm,
-      updateOrderForm,
-    ]
+  const removeItem = useCallback(
+    (props: Partial<Item>) => updateQuantity({ ...props, quantity: 0 }),
+    [updateQuantity]
   )
 
-  const value = useMemo(() => ({ updateItem, debouncedUpdateItem }), [
-    updateItem,
-    debouncedUpdateItem,
+  const value = useMemo(() => ({ updateQuantity, removeItem }), [
+    updateQuantity,
+    removeItem,
   ])
 
   return (
