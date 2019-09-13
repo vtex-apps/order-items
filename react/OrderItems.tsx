@@ -16,6 +16,7 @@ import { useOrderForm } from 'vtex.order-manager/OrderForm'
 
 const SUBTOTAL_TOTALIZER_ID = 'Items'
 const DEBOUNCE_TIME_MS = 300
+const AVAILABLE = 'available'
 
 interface Context {
   updateQuantity: (props: Partial<Item>) => void
@@ -43,13 +44,29 @@ const LoadingState: FunctionComponent = ({ children }: any) => {
   )
 }
 
-const updateTotalizers = (totalizers: Totalizer[], difference: number) => {
-  return totalizers.map((totalizer: Totalizer) => {
+const maybeUpdateTotalizers = (
+  totalizers: Totalizer[],
+  value: number,
+  oldItem: Item,
+  newItem: Item
+) => {
+  if (oldItem.availability !== AVAILABLE) {
+    return {}
+  }
+
+  const oldPrice = oldItem.price * oldItem.quantity
+  const newPrice = newItem.price * newItem.quantity
+  const subtotalDifference = newPrice - oldPrice
+
+  const newTotalizers = totalizers.map((totalizer: Totalizer) => {
     if (totalizer.id !== SUBTOTAL_TOTALIZER_ID) {
       return totalizer
     }
-    return { ...totalizer, value: totalizer.value + difference }
+    return { ...totalizer, value: totalizer.value + subtotalDifference }
   })
+  const newValue = value + subtotalDifference
+
+  return { totalizers: newTotalizers, value: newValue }
 }
 
 const enqueueTask = ({
@@ -87,7 +104,11 @@ export const OrderItemsProvider = graphql(UpdateItem, {
   name: 'UpdateItem',
 })(({ children, UpdateItem }: any) => {
   const { enqueue, listen } = useOrderQueue()
-  const { loading, orderForm, setOrderForm } = useOrderForm()
+  const {
+    loading,
+    orderForm: { items, totalizers, value: orderFormValue },
+    setOrderForm,
+  } = useOrderForm()
 
   if (loading) {
     return <LoadingState>{children}</LoadingState>
@@ -109,9 +130,9 @@ export const OrderItemsProvider = graphql(UpdateItem, {
       let uniqueId = props.uniqueId
 
       if (index) {
-        uniqueId = orderForm.items[index].uniqueId as string
+        uniqueId = items[index].uniqueId as string
       } else if (uniqueId) {
-        index = orderForm.items.findIndex(
+        index = items.findIndex(
           (item: Item) => item.uniqueId === props.uniqueId
         ) as number
       } else {
@@ -122,32 +143,30 @@ export const OrderItemsProvider = graphql(UpdateItem, {
 
       return { index, uniqueId }
     },
-    [orderForm.items]
+    [items]
   )
 
   const updateOrderForm = useCallback(
     (index: number, props: Partial<Item>) => {
-      const newItem = { ...orderForm.items[index], ...props }
+      const newItem = { ...items[index], ...props }
 
       const updatedList = [
-        ...orderForm.items.slice(0, index),
+        ...items.slice(0, index),
         ...(props.quantity === 0 ? [] : [newItem]),
-        ...orderForm.items.slice(index + 1),
+        ...items.slice(index + 1),
       ]
 
-      const oldValue =
-        orderForm.items[index].price * orderForm.items[index].quantity
-      const newValue = newItem.price * newItem.quantity
-      const subtotalDifference = newValue - oldValue
-
       setOrderForm({
-        ...orderForm,
-        totalizers: updateTotalizers(orderForm.totalizers, subtotalDifference),
-        value: orderForm.value + subtotalDifference,
+        ...maybeUpdateTotalizers(
+          totalizers,
+          orderFormValue,
+          items[index],
+          newItem
+        ),
         items: updatedList,
       })
     },
-    [orderForm, setOrderForm]
+    [items, totalizers, orderFormValue, setOrderForm]
   )
 
   const mutationTask = useCallback(
