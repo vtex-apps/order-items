@@ -1,7 +1,7 @@
 {
   "vendor": "vtex",
   "name": "order-items",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "title": "Order Items",
   "description": "Order Items",
   "defaultLocale": "pt-BR",
