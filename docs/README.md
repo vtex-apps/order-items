@@ -22,7 +22,7 @@ const MainComponent: FunctionComponent = () => (
 
 const MyComponent: FunctionComponent = () => {
   const { orderForm: { items } } = useOrderManager()
-  const { updateItem } = useOrderItems()
+  const { updateQuantity, removeItem } = useOrderItems()
   // ...
 }
 ```
@@ -38,7 +38,7 @@ This function has a debounce timeout of 300 milliseconds.
 #### Example
 
 ```tsx
-updateItem({
+updateQuantity({
   uniqueId: 'E1FDB9F661D74543AE3A13D587641E63',
   quantity: 3,
 })
