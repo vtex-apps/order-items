@@ -1,4 +1,4 @@
-import React, { createContext, FC, useContext, useMemo } from 'react'
+import React, { createContext, FC, useContext, useMemo, useRef } from 'react'
 
 interface Context {
   enqueue: (_: any) => Promise<any>
@@ -25,4 +25,13 @@ export const OrderQueueProvider: FC = ({ children }: any) => {
 
 export const useOrderQueue = () => {
   return useContext(OrderQueueContext)
+}
+
+export const useQueueStatus = (_: any) => {
+  return useRef('Fulfilled')
+}
+
+export enum QueueStatus {
+  PENDING = 'Pending',
+  FULFILLED = 'Fulfilled',
 }
