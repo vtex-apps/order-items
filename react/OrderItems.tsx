@@ -3,20 +3,24 @@ import React, {
   FunctionComponent,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useRef,
 } from 'react'
 import { graphql } from 'react-apollo'
 import debounce from 'debounce'
 import { memoizeWith } from 'ramda'
 import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
-import { useOrderQueue } from 'vtex.order-manager/OrderQueue'
+import {
+  QueueStatus,
+  useOrderQueue,
+  useQueueStatus,
+} from 'vtex.order-manager/OrderQueue'
 import { useOrderForm } from 'vtex.order-manager/OrderForm'
 
-const SUBTOTAL_TOTALIZER_ID = 'Items'
 const DEBOUNCE_TIME_MS = 300
+
 const AVAILABLE = 'available'
+const SUBTOTAL_TOTALIZER_ID = 'Items'
+const TASK_CANCELLED = 'TASK_CANCELLED'
 
 interface Context {
   updateQuantity: (props: Partial<Item>) => void
@@ -72,24 +76,24 @@ const maybeUpdateTotalizers = (
 const enqueueTask = ({
   task,
   enqueue,
-  isQueueBusy,
+  queueStatusRef,
   setOrderForm,
   taskId,
 }: {
   task: () => Promise<any>
   enqueue: (task: any, id?: string) => Promise<any>
-  isQueueBusy: any
+  queueStatusRef: React.MutableRefObject<QueueStatus>
   setOrderForm: (orderForm: Partial<OrderForm>) => void
   taskId?: string
 }) => {
   enqueue(task, taskId)
     .then((newOrderForm: OrderForm) => {
-      if (!isQueueBusy.current) {
+      if (queueStatusRef.current === QueueStatus.FULFILLED) {
         setOrderForm(newOrderForm)
       }
     })
     .catch((error: any) => {
-      if (!error || error.code !== 'TASK_CANCELLED') {
+      if (!error || error.code !== TASK_CANCELLED) {
         throw error
       }
     })
@@ -114,15 +118,7 @@ export const OrderItemsProvider = graphql(UpdateItem, {
     return <LoadingState>{children}</LoadingState>
   }
 
-  const isQueueBusy = useRef(false)
-  useEffect(() => {
-    const unlisten = listen('Pending', () => (isQueueBusy.current = true))
-    return unlisten
-  })
-  useEffect(() => {
-    const unlisten = listen('Fulfilled', () => (isQueueBusy.current = false))
-    return unlisten
-  })
+  const queueStatusRef = useQueueStatus(listen)
 
   const itemIds = useCallback(
     (props: Partial<Item>) => {
@@ -192,12 +188,19 @@ export const OrderItemsProvider = graphql(UpdateItem, {
       debouncedEnqueueTask(taskId)({
         task: mutationTask({ uniqueId, quantity: props.quantity }),
         enqueue,
-        isQueueBusy,
+        queueStatusRef,
         setOrderForm,
         taskId,
       })
     },
-    [enqueue, itemIds, mutationTask, setOrderForm, updateOrderForm]
+    [
+      enqueue,
+      itemIds,
+      mutationTask,
+      queueStatusRef,
+      setOrderForm,
+      updateOrderForm,
+    ]
   )
 
   const removeItem = useCallback(
