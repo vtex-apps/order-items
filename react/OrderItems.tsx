@@ -6,8 +6,6 @@ import React, {
   useMemo,
 } from 'react'
 import { graphql } from 'react-apollo'
-import debounce from 'debounce'
-import { memoizeWith } from 'ramda'
 import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
 import {
   QueueStatus,
@@ -15,8 +13,6 @@ import {
   useQueueStatus,
 } from 'vtex.order-manager/OrderQueue'
 import { useOrderForm } from 'vtex.order-manager/OrderForm'
-
-const DEBOUNCE_TIME_MS = 300
 
 const AVAILABLE = 'available'
 const TASK_CANCELLED = 'TASK_CANCELLED'
@@ -111,11 +107,6 @@ const enqueueTask = ({
     })
 }
 
-const debouncedEnqueueTask = memoizeWith(
-  (taskId: string) => taskId,
-  (_: string) => debounce(enqueueTask, DEBOUNCE_TIME_MS)
-)
-
 export const OrderItemsProvider = graphql(UpdateItem, {
   name: 'UpdateItem',
 })(({ children, UpdateItem }: any) => {
@@ -197,7 +188,7 @@ export const OrderItemsProvider = graphql(UpdateItem, {
       const { index, uniqueId } = itemIds(props)
       updateOrderForm(index, { quantity: props.quantity })
       const taskId = `updateQuantity-${uniqueId}`
-      debouncedEnqueueTask(taskId)({
+      enqueueTask({
         task: mutationTask({ uniqueId, quantity: props.quantity }),
         enqueue,
         queueStatusRef,
