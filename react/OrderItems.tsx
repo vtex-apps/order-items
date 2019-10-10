@@ -19,8 +19,12 @@ import { useOrderForm } from 'vtex.order-manager/OrderForm'
 const DEBOUNCE_TIME_MS = 300
 
 const AVAILABLE = 'available'
-const SUBTOTAL_TOTALIZER_ID = 'Items'
 const TASK_CANCELLED = 'TASK_CANCELLED'
+
+enum Totalizers {
+  SUBTOTAL = 'Items',
+  DISCOUNT = 'Discounts',
+}
 
 interface Context {
   updateQuantity: (props: Partial<Item>) => void
@@ -62,13 +66,21 @@ const maybeUpdateTotalizers = (
   const newPrice = newItem.price * newItem.quantity
   const subtotalDifference = newPrice - oldPrice
 
+  const oldDiscount = (oldItem.sellingPrice - oldItem.price) * oldItem.quantity
+  const newDiscount = (newItem.sellingPrice - newItem.price) * newItem.quantity
+  const discountDifference = newDiscount - oldDiscount
+
   const newTotalizers = totalizers.map((totalizer: Totalizer) => {
-    if (totalizer.id !== SUBTOTAL_TOTALIZER_ID) {
-      return totalizer
+    switch (totalizer.id) {
+      case Totalizers.SUBTOTAL:
+        return { ...totalizer, value: totalizer.value + subtotalDifference }
+      case Totalizers.DISCOUNT:
+        return { ...totalizer, value: totalizer.value + discountDifference }
+      default:
+        return totalizer
     }
-    return { ...totalizer, value: totalizer.value + subtotalDifference }
   })
-  const newValue = value + subtotalDifference
+  const newValue = value + subtotalDifference + discountDifference
 
   return { totalizers: newTotalizers, value: newValue }
 }
