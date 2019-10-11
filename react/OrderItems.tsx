@@ -25,6 +25,7 @@ enum Totalizers {
 interface Context {
   updateQuantity: (props: Partial<Item>) => void
   removeItem: (props: Partial<Item>) => void
+  splitRemoveItem: (props: Partial<Item>) => (() => void)[]
 }
 
 const OrderItemsContext = createContext<Context | undefined>(undefined)
@@ -37,6 +38,7 @@ const LoadingState: FunctionComponent = ({ children }: any) => {
       itemList: [],
       updateQuantity: noop,
       removeItem: noop,
+      splitRemoveItem: () => [() => {}, () => {}],
       loading: true,
     }),
     []
@@ -211,10 +213,36 @@ export const OrderItemsProvider = graphql(UpdateItem, {
     [updateQuantity]
   )
 
-  const value = useMemo(() => ({ updateQuantity, removeItem }), [
-    updateQuantity,
-    removeItem,
-  ])
+  const splitRemoveItem = useCallback(
+    (props: Partial<Item>) => {
+      const { index, uniqueId } = itemIds(props)
+      const taskId = `updateQuantity-${uniqueId}`
+      return {
+        updateUI: () => updateOrderForm(index, { quantity: 0 }),
+        enqueueRemoval: () =>
+          enqueueTask({
+            task: mutationTask({ uniqueId, quantity: 0 }),
+            enqueue,
+            queueStatusRef,
+            setOrderForm,
+            taskId,
+          }),
+      }
+    },
+    [
+      enqueue,
+      itemIds,
+      mutationTask,
+      queueStatusRef,
+      setOrderForm,
+      updateOrderForm,
+    ]
+  )
+
+  const value = useMemo(
+    () => ({ updateQuantity, removeItem, splitRemoveItem }),
+    [updateQuantity, removeItem, splitRemoveItem]
+  )
 
   return (
     <OrderItemsContext.Provider value={value}>
