@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useContext,
   useMemo,
+  useRef,
 } from 'react'
 import { graphql } from 'react-apollo'
 import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
@@ -25,6 +26,15 @@ enum Totalizers {
 interface Context {
   updateQuantity: (props: Partial<Item>) => void
   removeItem: (props: Partial<Item>) => void
+}
+
+interface CancellablePromiseLike<T> extends Promise<T> {
+  cancel: () => void
+}
+
+interface EnqueuedTask {
+  promise?: CancellablePromiseLike<any>
+  variables?: any
 }
 
 const OrderItemsContext = createContext<Context | undefined>(undefined)
@@ -89,12 +99,14 @@ const enqueueTask = ({
   taskId,
 }: {
   task: () => Promise<any>
-  enqueue: (task: any, id?: string) => Promise<any>
+  enqueue: (task: any, id?: string) => CancellablePromiseLike<any>
   queueStatusRef: React.MutableRefObject<QueueStatus>
   setOrderForm: (orderForm: Partial<OrderForm>) => void
   taskId?: string
 }) => {
-  enqueue(task, taskId)
+  const promise = enqueue(task, taskId)
+  const cancelPromise = promise.cancel
+  const newPromise = promise
     .then((newOrderForm: OrderForm) => {
       if (queueStatusRef.current === QueueStatus.FULFILLED) {
         setOrderForm(newOrderForm)
@@ -104,13 +116,16 @@ const enqueueTask = ({
       if (!error || error.code !== TASK_CANCELLED) {
         throw error
       }
-    })
+    }) as CancellablePromiseLike<void>
+
+  newPromise.cancel = cancelPromise
+  return newPromise
 }
 
 export const OrderItemsProvider = graphql(UpdateItem, {
   name: 'UpdateItem',
 })(({ children, UpdateItem }: any) => {
-  const { enqueue, listen } = useOrderQueue()
+  const { enqueue, listen, isWaiting } = useOrderQueue()
   const {
     loading,
     orderForm: { items, totalizers, value: orderFormValue },
@@ -122,6 +137,10 @@ export const OrderItemsProvider = graphql(UpdateItem, {
   }
 
   const queueStatusRef = useQueueStatus(listen)
+  const lastUpdateTaskRef = useRef({
+    promise: undefined,
+    variables: undefined,
+  } as EnqueuedTask)
 
   const itemIds = useCallback(
     (props: Partial<Item>) => {
@@ -169,12 +188,12 @@ export const OrderItemsProvider = graphql(UpdateItem, {
   )
 
   const mutationTask = useCallback(
-    (props: Partial<Item>) => async () => {
+    (items: Partial<Item>[]) => async () => {
       const {
         data: { updateItems: newOrderForm },
       } = await UpdateItem({
         variables: {
-          orderItems: [props],
+          orderItems: items,
         },
       })
 
@@ -184,26 +203,32 @@ export const OrderItemsProvider = graphql(UpdateItem, {
   )
 
   const updateQuantity = useCallback(
-    (props: Partial<Item>) => {
+    async (props: Partial<Item>) => {
       const { index, uniqueId } = itemIds(props)
       updateOrderForm(index, { quantity: props.quantity })
-      const taskId = `updateQuantity-${uniqueId}`
-      enqueueTask({
-        task: mutationTask({ uniqueId, quantity: props.quantity }),
+      const taskId = 'OrderItems-updateQuantity'
+      let items = [{ uniqueId, quantity: props.quantity }]
+
+      if (lastUpdateTaskRef.current.promise && isWaiting(taskId)) {
+        lastUpdateTaskRef.current.promise.cancel()
+        items = [
+          ...lastUpdateTaskRef.current.variables.filter(
+            (item: Pick<Item, 'uniqueId'>) => item.uniqueId !== uniqueId
+          ),
+          ...items,
+        ]
+      }
+
+      lastUpdateTaskRef.current.promise = enqueueTask({
+        task: mutationTask(items),
         enqueue,
         queueStatusRef,
         setOrderForm,
         taskId,
       })
+      lastUpdateTaskRef.current.variables = items
     },
-    [
-      enqueue,
-      itemIds,
-      mutationTask,
-      queueStatusRef,
-      setOrderForm,
-      updateOrderForm,
-    ]
+    [enqueue, itemIds, mutationTask, setOrderForm, updateOrderForm]
   )
 
   const removeItem = useCallback(
