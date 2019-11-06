@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.5.0] - 2019-11-06
+
 ### Changed
 
 - Enqueued `updateItem` mutations are now merged together to prevent the task queue from growing too much.
