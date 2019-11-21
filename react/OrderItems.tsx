@@ -1,12 +1,13 @@
 import React, {
   createContext,
+  FC,
   useCallback,
   useContext,
   useMemo,
   useRef,
 } from 'react'
-import { graphql } from 'react-apollo'
-import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
+import { useMutation } from 'react-apollo'
+import { updateItems as UpdateItems } from 'vtex.checkout-resources/Mutations'
 import {
   QueueStatus,
   useOrderQueue,
@@ -104,15 +105,15 @@ const enqueueTask = ({
   return newPromise
 }
 
-export const OrderItemsProvider = graphql(UpdateItem, {
-  name: 'UpdateItem',
-})(({ children, UpdateItem }: any) => {
+export const OrderItemsProvider: FC = ({ children }) => {
   const { enqueue, listen, isWaiting } = useOrderQueue()
   const {
     loading,
     orderForm: { items, totalizers, value: orderFormValue },
     setOrderForm,
   } = useOrderForm()
+
+  const [updateItems] = useMutation(UpdateItems)
 
   const queueStatusRef = useQueueStatus(listen)
   const lastUpdateTaskRef = useRef({
@@ -169,7 +170,7 @@ export const OrderItemsProvider = graphql(UpdateItem, {
     (items: Partial<Item>[]) => async () => {
       const {
         data: { updateItems: newOrderForm },
-      } = await UpdateItem({
+      } = await updateItems({
         variables: {
           orderItems: items,
         },
@@ -177,7 +178,7 @@ export const OrderItemsProvider = graphql(UpdateItem, {
 
       return newOrderForm
     },
-    [UpdateItem]
+    [updateItems]
   )
 
   const updateQuantity = useCallback(
@@ -230,7 +231,7 @@ export const OrderItemsProvider = graphql(UpdateItem, {
       {children}
     </OrderItemsContext.Provider>
   )
-})
+}
 
 export const useOrderItems = () => {
   const context = useContext(OrderItemsContext)
