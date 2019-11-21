@@ -107,11 +107,7 @@ const enqueueTask = ({
 
 export const OrderItemsProvider: FC = ({ children }) => {
   const { enqueue, listen, isWaiting } = useOrderQueue()
-  const {
-    loading,
-    orderForm: { items, totalizers, value: orderFormValue },
-    setOrderForm,
-  } = useOrderForm()
+  const { loading, orderForm, setOrderForm } = useOrderForm()
 
   const [updateItems] = useMutation(UpdateItems)
 
@@ -120,6 +116,12 @@ export const OrderItemsProvider: FC = ({ children }) => {
     promise: undefined,
     variables: undefined,
   } as EnqueuedTask)
+
+  if (!orderForm) {
+    throw new Error('Unable to fetch order form.')
+  }
+
+  const { items, totalizers, value: orderFormValue } = orderForm
 
   const itemIds = useCallback(
     (props: Partial<Item>) => {
