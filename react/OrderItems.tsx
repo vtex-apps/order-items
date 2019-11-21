@@ -1,6 +1,5 @@
 import React, {
   createContext,
-  FunctionComponent,
   useCallback,
   useContext,
   useMemo,
@@ -40,23 +39,6 @@ interface EnqueuedTask {
 const OrderItemsContext = createContext<Context | undefined>(undefined)
 
 const noop = async (_: Partial<Item>) => {}
-
-const LoadingState: FunctionComponent = ({ children }: any) => {
-  const value = useMemo(
-    () => ({
-      itemList: [],
-      updateQuantity: noop,
-      removeItem: noop,
-      loading: true,
-    }),
-    []
-  )
-  return (
-    <OrderItemsContext.Provider value={value}>
-      {children}
-    </OrderItemsContext.Provider>
-  )
-}
 
 const maybeUpdateTotalizers = (
   totalizers: Totalizer[],
@@ -131,10 +113,6 @@ export const OrderItemsProvider = graphql(UpdateItem, {
     orderForm: { items, totalizers, value: orderFormValue },
     setOrderForm,
   } = useOrderForm()
-
-  if (loading) {
-    return <LoadingState>{children}</LoadingState>
-  }
 
   const queueStatusRef = useQueueStatus(listen)
   const lastUpdateTaskRef = useRef({
@@ -236,10 +214,16 @@ export const OrderItemsProvider = graphql(UpdateItem, {
     [updateQuantity]
   )
 
-  const value = useMemo(() => ({ updateQuantity, removeItem }), [
-    updateQuantity,
-    removeItem,
-  ])
+  const value = useMemo(
+    () =>
+      loading
+        ? {
+            updateQuantity: noop,
+            removeItem: noop,
+          }
+        : { updateQuantity, removeItem },
+    [loading, updateQuantity, removeItem]
+  )
 
   return (
     <OrderItemsContext.Provider value={value}>
