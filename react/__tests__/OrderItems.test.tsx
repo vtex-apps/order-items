@@ -1,5 +1,6 @@
 import { adjust } from 'ramda'
 import React, { FunctionComponent } from 'react'
+import { MockedProvider } from '@apollo/react-testing'
 import { act, render, fireEvent } from '@vtex/test-tools/react'
 import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
 import { OrderFormProvider, useOrderForm } from 'vtex.order-manager/OrderForm'
@@ -75,14 +76,15 @@ describe('OrderItems', () => {
     )
 
     const { getByText } = render(
-      <OrderQueueProvider>
-        <OrderFormProvider>
-          <OrderItemsProvider>
-            <Component />
-          </OrderItemsProvider>
-        </OrderFormProvider>
-      </OrderQueueProvider>,
-      { graphql: { mocks: [mockUpdateItem] } }
+      <MockedProvider mocks={[mockUpdateItem]} addTypename={false}>
+        <OrderQueueProvider>
+          <OrderFormProvider>
+            <OrderItemsProvider>
+              <Component />
+            </OrderItemsProvider>
+          </OrderFormProvider>
+        </OrderQueueProvider>
+      </MockedProvider>
     )
 
     const button = getByText('mutate')
@@ -126,14 +128,15 @@ describe('OrderItems', () => {
     )
 
     const { getByText, queryByText } = render(
-      <OrderQueueProvider>
-        <OrderFormProvider>
-          <OrderItemsProvider>
-            <Component />
-          </OrderItemsProvider>
-        </OrderFormProvider>
-      </OrderQueueProvider>,
-      { graphql: { mocks: [mockUpdateItem] } }
+      <MockedProvider mocks={[mockUpdateItem]} addTypename={false}>
+        <OrderQueueProvider>
+          <OrderFormProvider>
+            <OrderItemsProvider>
+              <Component />
+            </OrderItemsProvider>
+          </OrderFormProvider>
+        </OrderQueueProvider>
+      </MockedProvider>
     )
 
     const button = getByText('mutate')
