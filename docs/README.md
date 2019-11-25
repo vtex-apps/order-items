@@ -33,8 +33,6 @@ const MyComponent: FunctionComponent = () => {
 
 Updates the quantity of an item in the order form. `props` must contain either the `uniqueId` or `index` of the item to be updated as well as the desired `quantity`.
 
-This function has a debounce timeout of 300 milliseconds.
-
 #### Example
 
 ```tsx
@@ -47,8 +45,6 @@ updateQuantity({
 ### `removeItem: (props: { uniqueId?: string, index?: number }) => void`
 
 Removes an item from the cart. `props` must contain either the `uniqueId` or `index` of the item to be removed.
-
-This function has a debounce timeout of 300 milliseconds.
 
 #### Example
 

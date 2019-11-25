@@ -1,13 +1,13 @@
 import React, {
   createContext,
-  FunctionComponent,
+  FC,
   useCallback,
   useContext,
   useMemo,
   useRef,
 } from 'react'
-import { graphql } from 'react-apollo'
-import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
+import { useMutation } from 'react-apollo'
+import { updateItems as UpdateItems } from 'vtex.checkout-resources/Mutations'
 import {
   QueueStatus,
   useOrderQueue,
@@ -40,23 +40,6 @@ interface EnqueuedTask {
 const OrderItemsContext = createContext<Context | undefined>(undefined)
 
 const noop = async (_: Partial<Item>) => {}
-
-const LoadingState: FunctionComponent = ({ children }: any) => {
-  const value = useMemo(
-    () => ({
-      itemList: [],
-      updateQuantity: noop,
-      removeItem: noop,
-      loading: true,
-    }),
-    []
-  )
-  return (
-    <OrderItemsContext.Provider value={value}>
-      {children}
-    </OrderItemsContext.Provider>
-  )
-}
 
 const maybeUpdateTotalizers = (
   totalizers: Totalizer[],
@@ -122,25 +105,23 @@ const enqueueTask = ({
   return newPromise
 }
 
-export const OrderItemsProvider = graphql(UpdateItem, {
-  name: 'UpdateItem',
-})(({ children, UpdateItem }: any) => {
+export const OrderItemsProvider: FC = ({ children }) => {
   const { enqueue, listen, isWaiting } = useOrderQueue()
-  const {
-    loading,
-    orderForm: { items, totalizers, value: orderFormValue },
-    setOrderForm,
-  } = useOrderForm()
+  const { loading, orderForm, setOrderForm } = useOrderForm()
 
-  if (loading) {
-    return <LoadingState>{children}</LoadingState>
-  }
+  const [updateItems] = useMutation(UpdateItems)
 
   const queueStatusRef = useQueueStatus(listen)
   const lastUpdateTaskRef = useRef({
     promise: undefined,
     variables: undefined,
   } as EnqueuedTask)
+
+  if (!orderForm) {
+    throw new Error('Unable to fetch order form.')
+  }
+
+  const { items, totalizers, value: orderFormValue } = orderForm
 
   const itemIds = useCallback(
     (props: Partial<Item>) => {
@@ -191,7 +172,7 @@ export const OrderItemsProvider = graphql(UpdateItem, {
     (items: Partial<Item>[]) => async () => {
       const {
         data: { updateItems: newOrderForm },
-      } = await UpdateItem({
+      } = await updateItems({
         variables: {
           orderItems: items,
         },
@@ -199,7 +180,7 @@ export const OrderItemsProvider = graphql(UpdateItem, {
 
       return newOrderForm
     },
-    [UpdateItem]
+    [updateItems]
   )
 
   const updateQuantity = useCallback(
@@ -236,17 +217,23 @@ export const OrderItemsProvider = graphql(UpdateItem, {
     [updateQuantity]
   )
 
-  const value = useMemo(() => ({ updateQuantity, removeItem }), [
-    updateQuantity,
-    removeItem,
-  ])
+  const value = useMemo(
+    () =>
+      loading
+        ? {
+            updateQuantity: noop,
+            removeItem: noop,
+          }
+        : { updateQuantity, removeItem },
+    [loading, updateQuantity, removeItem]
+  )
 
   return (
     <OrderItemsContext.Provider value={value}>
       {children}
     </OrderItemsContext.Provider>
   )
-})
+}
 
 export const useOrderItems = () => {
   const context = useContext(OrderItemsContext)

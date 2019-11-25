@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Treats case when OrderManager fails to fetch order form and provides a better error message when that happens.
+
 ## [0.5.0] - 2019-11-06
 
 ### Changed
