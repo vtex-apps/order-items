@@ -1,3 +1,4 @@
+import { equals } from 'ramda'
 import React, {
   createContext,
   FC,
@@ -8,6 +9,7 @@ import React, {
 } from 'react'
 import { useMutation } from 'react-apollo'
 import UpdateItems from 'vtex.checkout-resources/MutationUpdateItems'
+import AddToCart from 'vtex.checkout-resources/MutationAddToCard'
 import {
   QueueStatus,
   useOrderQueue,
@@ -28,7 +30,7 @@ interface Context {
   removeItem: (props: Partial<Item>) => void
 }
 
-interface CancellablePromiseLike<T> extends Promise<T> {
+interface CancellablePromiseLike<T> extends PromiseLike<T> {
   cancel: () => void
 }
 
@@ -82,40 +84,50 @@ const enqueueTask = ({
   taskId,
 }: {
   task: () => Promise<any>
-  enqueue: (task: any, id?: string) => CancellablePromiseLike<any>
+  enqueue: (
+    task: () => Promise<any>,
+    id?: string
+  ) => CancellablePromiseLike<any>
   queueStatusRef: React.MutableRefObject<QueueStatus>
   setOrderForm: (orderForm: Partial<OrderForm>) => void
   taskId?: string
 }) => {
   const promise = enqueue(task, taskId)
+
   const cancelPromise = promise.cancel
-  const newPromise = promise
-    .then((newOrderForm: OrderForm) => {
+
+  const newPromise = promise.then(
+    (newOrderForm: OrderForm) => {
       if (queueStatusRef.current === QueueStatus.FULFILLED) {
         setOrderForm(newOrderForm)
       }
-    })
-    .catch((error: any) => {
+    },
+    error => {
       if (!error || error.code !== TASK_CANCELLED) {
         throw error
       }
-    }) as CancellablePromiseLike<void>
+    }
+  ) as CancellablePromiseLike<void>
 
   newPromise.cancel = cancelPromise
   return newPromise
+}
+
+interface UpdateItemsMutation {
+  updateItems: OrderForm
 }
 
 export const OrderItemsProvider: FC = ({ children }) => {
   const { enqueue, listen, isWaiting } = useOrderQueue()
   const { loading, orderForm, setOrderForm } = useOrderForm()
 
-  const [updateItems] = useMutation(UpdateItems)
+  const [updateItems] = useMutation<UpdateItemsMutation>(UpdateItems)
 
   const queueStatusRef = useQueueStatus(listen)
-  const lastUpdateTaskRef = useRef({
+  const lastUpdateTaskRef = useRef<EnqueuedTask>({
     promise: undefined,
     variables: undefined,
-  } as EnqueuedTask)
+  })
 
   if (!orderForm) {
     throw new Error('Unable to fetch order form.')
@@ -170,17 +182,48 @@ export const OrderItemsProvider: FC = ({ children }) => {
 
   const mutationTask = useCallback(
     (items: Partial<Item>[]) => async () => {
-      const {
-        data: { updateItems: newOrderForm },
-      } = await updateItems({
+      const { data } = await updateItems({
         variables: {
           orderItems: items,
         },
       })
 
+      const newOrderForm = (data && data.updateItems) || {}
+
       return newOrderForm
     },
     [updateItems]
+  )
+
+  const [addToCart] = useMutation<
+    { addToCart: OrderForm },
+    { items: OrderFormItemInput[] }
+  >(AddToCart)
+
+  const addItem = useCallback(
+    async (skuItems: OrderFormItemInput[]) => {
+      const mutationResult = await addToCart({
+        variables: { items: skuItems },
+      })
+
+      if (mutationResult.errors) {
+        console.error(mutationResult.errors)
+        // toastMessage({ success: false, isNewItem: false })
+        return
+      }
+
+      if (
+        mutationResult.data &&
+        equals(mutationResult.data.addToCart, orderForm)
+      ) {
+        // toastMessage({ success: true, isNewItem: false })
+        return
+      }
+
+      // Update OrderForm from the context
+      mutationResult.data && setOrderForm(mutationResult.data.addToCart)
+    },
+    [addToCart, orderForm, setOrderForm]
   )
 
   const updateQuantity = useCallback(
@@ -209,7 +252,15 @@ export const OrderItemsProvider: FC = ({ children }) => {
       })
       lastUpdateTaskRef.current.variables = items
     },
-    [enqueue, itemIds, mutationTask, setOrderForm, updateOrderForm]
+    [
+      enqueue,
+      isWaiting,
+      itemIds,
+      mutationTask,
+      queueStatusRef,
+      setOrderForm,
+      updateOrderForm,
+    ]
   )
 
   const removeItem = useCallback(
@@ -223,9 +274,10 @@ export const OrderItemsProvider: FC = ({ children }) => {
         ? {
             updateQuantity: noop,
             removeItem: noop,
+            addItem: noop,
           }
-        : { updateQuantity, removeItem },
-    [loading, updateQuantity, removeItem]
+        : { addItem, updateQuantity, removeItem },
+    [loading, addItem, updateQuantity, removeItem]
   )
 
   return (
