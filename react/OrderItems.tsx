@@ -7,7 +7,10 @@ import React, {
   useRef,
 } from 'react'
 import { useMutation } from 'react-apollo'
-import { updateItems as UpdateItems } from 'vtex.checkout-resources/Mutations'
+import {
+  updateItems as UpdateItems,
+  addToCart as AddToCart,
+} from 'vtex.checkout-resources/Mutations'
 import {
   QueueStatus,
   useOrderQueue,
@@ -26,6 +29,7 @@ enum Totalizers {
 interface Context {
   updateQuantity: (props: Partial<Item>) => void
   removeItem: (props: Partial<Item>) => void
+  addItemToCart: (items: Item[]) => void
 }
 
 interface CancellablePromiseLike<T> extends Promise<T> {
@@ -109,6 +113,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
   const { enqueue, listen, isWaiting } = useOrderQueue()
   const { loading, orderForm, setOrderForm } = useOrderForm()
 
+  const [addToCart] = useMutation(AddToCart)
   const [updateItems] = useMutation(UpdateItems)
 
   const queueStatusRef = useQueueStatus(listen)
@@ -217,14 +222,37 @@ export const OrderItemsProvider: FC = ({ children }) => {
     [updateQuantity]
   )
 
+  const addItemToCart = async (items: Item[]) => {
+    const task = async () => {
+      try {
+        const {
+          data: { addToCart: newOrderForm },
+        } = await addToCart({ variables: { items } })
+
+        return newOrderForm
+      } catch (error) {
+        console.error(error)
+        return null
+      }
+    }
+
+    const newOrderForm = await enqueue(task)
+
+    newOrderForm && setOrderForm(newOrderForm)
+    let error = !newOrderForm
+
+    return { data: newOrderForm, error }
+  }
+
   const value = useMemo(
     () =>
       loading
         ? {
             updateQuantity: noop,
             removeItem: noop,
+            addItemToCart: () => {},
           }
-        : { updateQuantity, removeItem },
+        : { addItemToCart, updateQuantity, removeItem },
     [loading, updateQuantity, removeItem]
   )
 
