@@ -190,9 +190,7 @@ describe('OrderItems', () => {
           {items.map((item: Partial<Item>) => (
             <div key={item.name}>{item.name}</div>
           ))}
-          <button onClick={() => addItemToCart([...items, newItem])}>
-            mutate
-          </button>
+          <button onClick={() => addItemToCart([newItem])}>mutate</button>
         </div>
       )
     }
@@ -207,7 +205,7 @@ describe('OrderItems', () => {
     }
 
     const mockAddItemToCart = mockAddToCartMutation(
-      [...mockOrderForm.items, newItem],
+      [newItem],
       [...mockOrderForm.items, newItem]
     )
 

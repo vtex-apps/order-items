@@ -60,14 +60,15 @@ Add an item to the cart. `props` must be a list with the `items` to be added to 
 
 ```tsx
 addItemToCart([{
-                id: '2000535',
-                listPrice: 400000,
-                name: 'Vasco Football T-shirt',
-                price: 360000,
-                productId: '13',
-                quantity: 4,
-                sellingPrice: 360000,
-                skuName: 'Test SKU 2',
-                skuSpecifications: [],
-                uniqueId: 'SomeUniqueId2',
-              }])
+  id: '2000535',
+  listPrice: 400000,
+  name: 'Vasco Football T-shirt',
+  price: 360000,
+  productId: '13',
+  quantity: 4,
+  sellingPrice: 360000,
+  skuName: 'Test SKU 2',
+  skuSpecifications: [],
+  uniqueId: 'SomeUniqueId2',
+}])
+```
