@@ -29,7 +29,7 @@ enum Totalizers {
 interface Context {
   updateQuantity: (props: Partial<Item>) => void
   removeItem: (props: Partial<Item>) => void
-  addItemToCart: (items: Item[]) => void
+  addItemToCart: (items: Partial<Item>[]) => void
 }
 
 interface CancellablePromiseLike<T> extends Promise<T> {
@@ -222,7 +222,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
     [updateQuantity]
   )
 
-  const addItemToCart = async (items: Item[]) => {
+  const addItemToCart = async (items: Partial<Item>[]) => {
     const task = async () => {
       try {
         const {

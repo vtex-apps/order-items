@@ -7,3 +7,11 @@ export const updateItems = gql`
     }
   }
 `
+
+export const addToCart = gql`
+  mutation MockMutation($items: [ItemInput]) {
+    addToCart(items: $items) {
+      items
+    }
+  }
+`

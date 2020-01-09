@@ -2,7 +2,10 @@ import { adjust } from 'ramda'
 import React, { FunctionComponent } from 'react'
 import { MockedProvider } from '@apollo/react-testing'
 import { act, render, fireEvent } from '@vtex/test-tools/react'
-import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
+import {
+  updateItems as UpdateItem,
+  addToCart as AddToCart,
+} from 'vtex.checkout-resources/Mutations'
 import { OrderFormProvider, useOrderForm } from 'vtex.order-manager/OrderForm'
 import { OrderQueueProvider } from 'vtex.order-manager/OrderQueue'
 
@@ -22,6 +25,26 @@ const mockUpdateItemMutation = (
   result: {
     data: {
       updateItems: {
+        ...mockOrderForm,
+        items: result,
+      },
+    },
+  },
+})
+
+const mockAddToCartMutation = (
+  args: Partial<Item>[],
+  result: Partial<Item>[]
+) => ({
+  request: {
+    query: AddToCart,
+    variables: {
+      items: args,
+    },
+  },
+  result: {
+    data: {
+      addToCart: {
         ...mockOrderForm,
         items: result,
       },
@@ -154,5 +177,58 @@ describe('OrderItems', () => {
 
     await act(() => new Promise(resolve => setTimeout(() => resolve()))) // waits for actual mutation result
     expect(getByText(`${mockOrderForm.items[0].name}: 7`)).toBeTruthy()
+  })
+
+  it('should add an item when addItemToCart is called', async () => {
+    const Component: FunctionComponent = () => {
+      const {
+        orderForm: { items },
+      } = useOrderForm()
+      const { addItemToCart } = useOrderItems()
+      return (
+        <div>
+          {items.map((item: Partial<Item>) => (
+            <div key={item.name}>{item.name}</div>
+          ))}
+          <button onClick={() => addItemToCart([...items, newItem])}>
+            mutate
+          </button>
+        </div>
+      )
+    }
+
+    const newItem = {
+      ...mockOrderForm.items[0],
+      id: '10',
+      productId: '10',
+      name: 'novo item adicionado',
+      price: 23000,
+      uniqueId: 'someUniqueId3',
+    }
+
+    const mockAddItemToCart = mockAddToCartMutation(
+      [...mockOrderForm.items, newItem],
+      [...mockOrderForm.items, newItem]
+    )
+
+    const { getByText } = render(
+      <MockedProvider mocks={[mockAddItemToCart]} addTypename={false}>
+        <OrderQueueProvider>
+          <OrderFormProvider>
+            <OrderItemsProvider>
+              <Component />
+            </OrderItemsProvider>
+          </OrderFormProvider>
+        </OrderQueueProvider>
+      </MockedProvider>
+    )
+
+    const button = getByText('mutate')
+
+    act(() => {
+      fireEvent.click(button)
+    })
+    await act(() => new Promise(resolve => setTimeout(() => resolve())))
+    expect(getByText('novo item adicionado')).toBeTruthy()
   })
 })
