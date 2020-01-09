@@ -59,7 +59,7 @@ Add an item to the cart. `props` must be a list with the `items` to be added to 
 #### Example
 
 ```tsx
-addItemToCart([{{
+addItemToCart([{
       id: '2000535',
       listPrice: 400000,
       name: 'Camisa Vasco',
@@ -70,4 +70,4 @@ addItemToCart([{{
       skuName: 'Test SKU 2',
       skuSpecifications: [],
       uniqueId: 'SomeUniqueId2',
-    }}])
+    }])
