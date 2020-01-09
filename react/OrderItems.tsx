@@ -29,7 +29,7 @@ enum Totalizers {
 interface Context {
   updateQuantity: (props: Partial<Item>) => void
   removeItem: (props: Partial<Item>) => void
-  addItemToCart: (items: Partial<Item>[]) => void
+  addItemToCart: (props: Partial<Item>[]) => void
 }
 
 interface CancellablePromiseLike<T> extends Promise<T> {
@@ -43,7 +43,8 @@ interface EnqueuedTask {
 
 const OrderItemsContext = createContext<Context | undefined>(undefined)
 
-const noop = async (_: Partial<Item>) => {}
+const noopItem = async (_: Partial<Item>) => {}
+const noopItems = async (_: Partial<Item>[]) => {}
 
 const maybeUpdateTotalizers = (
   totalizers: Totalizer[],
@@ -248,9 +249,9 @@ export const OrderItemsProvider: FC = ({ children }) => {
     () =>
       loading
         ? {
-            updateQuantity: noop,
-            removeItem: noop,
-            addItemToCart: () => {},
+            updateQuantity: noopItem,
+            removeItem: noopItem,
+            addItemToCart: noopItems,
           }
         : { addItemToCart, updateQuantity, removeItem },
     [loading, updateQuantity, removeItem]
