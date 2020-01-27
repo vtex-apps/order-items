@@ -1,3 +1,5 @@
+/* eslint-disable import/order, import/no-duplicates */
+
 declare module 'vtex.order-manager/OrderForm' {
   import { OrderForm } from 'vtex.order-manager'
 
@@ -9,16 +11,9 @@ declare module 'vtex.order-manager/OrderForm' {
 declare module 'vtex.order-manager/OrderQueue' {
   import { OrderQueue } from 'vtex.order-manager'
 
-  export const OrderQueueProvider = OrderQueue.OrderQueueProvider
-
   export const useOrderQueue = OrderQueue.useOrderQueue
 
-  // the typings generated from `vtex setup` don't work
-  // well with enums, so we need to redefine it
-  export enum QueueStatus {
-    PENDING = 'Pending',
-    FULFILLED = 'Fulfilled',
-  }
+  export const QueueStatus = OrderQueue.QueueStatus
 
   export const useQueueStatus = OrderQueue.useQueueStatus
 }

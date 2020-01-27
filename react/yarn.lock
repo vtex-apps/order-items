@@ -1092,6 +1092,11 @@
   dependencies:
     "@types/jest-diff" "*"
 
+"@types/node@*":
+  version "13.1.7"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-13.1.7.tgz#db51d28b8dfacfe4fb2d0da88f5eb0a2eca00675"
+  integrity sha512-HU0q9GXazqiKwviVxg9SI/+t/nAsGkvLDkIdxz+ObejG2nX6Si00TeLqHMoS+a/1tjH7a8YpKVQwtgHuMQsldg==
+
 "@types/node@>=6":
   version "12.7.2"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-12.7.2.tgz#c4e63af5e8823ce9cc3f0b34f7b998c2171f0c44"
@@ -1138,6 +1143,13 @@
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@types/stack-utils/-/stack-utils-1.0.1.tgz#0a851d3bd96498fa25c33ab7278ed3bd65f06c3e"
   integrity sha512-l42BggppR6zLmpfU6fq9HEa2oGPEI8yrSPL3GITjfRInppYFahObbIQOQK3UGxEnyQpltZLaPe75046NOZQikw==
+
+"@types/uuid@^3.4.6":
+  version "3.4.6"
+  resolved "https://registry.yarnpkg.com/@types/uuid/-/uuid-3.4.6.tgz#d2c4c48eb85a757bf2927f75f939942d521e3016"
+  integrity sha512-cCdlC/1kGEZdEglzOieLDYBxHsvEOIg7kp/2FYyVR9Pxakq+Qf/inL3RKQ+PA8gOlI/NnL+fXmQH12nwcGzsHw==
+  dependencies:
+    "@types/node" "*"
 
 "@types/yargs-parser@*":
   version "13.0.0"
@@ -4805,7 +4817,7 @@ util.promisify@^1.0.0:
     define-properties "^1.1.2"
     object.getownpropertydescriptors "^2.0.3"
 
-uuid@^3.3.2:
+uuid@^3.3.2, uuid@^3.3.3:
   version "3.3.3"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.3.3.tgz#4568f0216e78760ee1dbf3a4d2cf53e224112866"
   integrity sha512-pW0No1RGHgzlpHJO1nsVrHKpOEIxkGg1xB+v0ZmdNH5OAeAwzAVrCnI2/6Mtx+Uys6iaylxa+D3g4j63IKKjSQ==
@@ -4827,17 +4839,17 @@ verror@1.10.0:
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
 
-"vtex.checkout-resources@http://vtex.vteximg.com.br/_v/public/typings/v1/vtex.checkout-resources@0.12.0/public/_types/react":
-  version "0.0.0"
-  resolved "http://vtex.vteximg.com.br/_v/public/typings/v1/vtex.checkout-resources@0.12.0/public/_types/react#fa7a0347e046eab3dd768998fc9252b2c0dd5aef"
+"vtex.checkout-resources@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-resources@0.15.0/public/@types/vtex.checkout-resources":
+  version "0.15.0"
+  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-resources@0.15.0/public/@types/vtex.checkout-resources#205790019874cd3fb76230c59453fd78e9f8c166"
 
-"vtex.order-manager@https://lucas2--storecomponents.myvtex.com/_v/private/typings/linked/v1/vtex.order-manager@0.6.3+build1575550701/public/@types/vtex.order-manager":
-  version "0.6.3"
-  resolved "https://lucas2--storecomponents.myvtex.com/_v/private/typings/linked/v1/vtex.order-manager@0.6.3+build1575550701/public/@types/vtex.order-manager#83f8c2a0c119ad67e75d6120a89d1e7d45ba63b0"
+"vtex.order-manager@https://lucas--storecomponents.myvtex.com/_v/private/typings/linked/v1/vtex.order-manager@0.6.9+build1579176442/public/@types/vtex.order-manager":
+  version "0.6.9"
+  resolved "https://lucas--storecomponents.myvtex.com/_v/private/typings/linked/v1/vtex.order-manager@0.6.9+build1579176442/public/@types/vtex.order-manager#2a128d730f1216e38a353d904567e25052006e27"
 
-"vtex.render-runtime@http://vtex.vteximg.com.br/_v/public/typings/v1/vtex.render-runtime@8.83.0-hkignore.1/public/@types/vtex.render-runtime":
-  version "8.83.0-hkignore.1"
-  resolved "http://vtex.vteximg.com.br/_v/public/typings/v1/vtex.render-runtime@8.83.0-hkignore.1/public/@types/vtex.render-runtime#0399ccbaa0059d2fc15a3c21a2f61e4b8d4df6dc"
+"vtex.render-runtime@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.90.1/public/@types/vtex.render-runtime":
+  version "8.90.1"
+  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.90.1/public/@types/vtex.render-runtime#5695f99b1d854a0beefbef338b5347a837afde15"
 
 w3c-hr-time@^1.0.1:
   version "1.0.1"

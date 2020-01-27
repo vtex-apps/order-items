@@ -28,8 +28,10 @@ interface Item {
   productId: string
   quantity: number
   sellingPrice: number
+  seller: string
   skuName: string
   skuSpecifications: SKUSpecification[]
+  options?: AssemblyOptionInput[]
   uniqueId: string
 }
 

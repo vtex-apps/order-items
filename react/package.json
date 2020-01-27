@@ -10,7 +10,8 @@
     "react": "^16.8.3",
     "react-dom": "^16.9.0",
     "react-intl": "^2.7.2",
-    "recompose": "^0.30.0"
+    "recompose": "^0.30.0",
+    "uuid": "^3.3.3"
   },
   "devDependencies": {
     "@apollo/react-testing": "^3.1.3",
@@ -24,15 +25,16 @@
     "@types/react": "^16.8.10",
     "@types/react-intl": "^2.3.17",
     "@types/recompose": "^0.30.7",
+    "@types/uuid": "^3.4.6",
     "@vtex/test-tools": "^1.1.0",
     "apollo-client": "^2.5.1",
     "ramda": "^0.26.1",
     "react-apollo": "^3.1.3",
     "tslint-eslint-rules": "^5.4.0",
     "typescript": "3.7.3",
-    "vtex.render-runtime": "http://vtex.vteximg.com.br/_v/public/typings/v1/vtex.render-runtime@8.83.0-hkignore.1/public/@types/vtex.render-runtime",
-    "vtex.checkout-resources": "http://vtex.vteximg.com.br/_v/public/typings/v1/vtex.checkout-resources@0.12.0/public/_types/react",
-    "vtex.order-manager": "https://lucas2--storecomponents.myvtex.com/_v/private/typings/linked/v1/vtex.order-manager@0.6.3+build1575550701/public/@types/vtex.order-manager"
+    "vtex.render-runtime": "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.90.1/public/@types/vtex.render-runtime",
+    "vtex.checkout-resources": "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-resources@0.15.0/public/@types/vtex.checkout-resources",
+    "vtex.order-manager": "https://lucas--storecomponents.myvtex.com/_v/private/typings/linked/v1/vtex.order-manager@0.6.9+build1579176442/public/@types/vtex.order-manager"
   },
   "version": "0.5.2"
 }
