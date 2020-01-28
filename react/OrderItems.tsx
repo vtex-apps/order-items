@@ -242,7 +242,10 @@ export const OrderItemsProvider: FC = ({ children }) => {
 
                 // update all mutations in the queue that referenced
                 // this item with it's fake `uniqueId`
-                updateLocalQueueItemIds({ fakeUniqueId, uniqueId: updatedItem.uniqueId })
+                updateLocalQueueItemIds({
+                  fakeUniqueId,
+                  uniqueId: updatedItem.uniqueId,
+                })
 
                 return {
                   ...item,
@@ -295,7 +298,11 @@ export const OrderItemsProvider: FC = ({ children }) => {
           quantity,
         }
 
-        updatedItems[index] = newItem
+        if (quantity > 0) {
+          updatedItems[index] = newItem
+        } else {
+          updatedItems.splice(index, 1)
+        }
 
         return {
           ...prevOrderForm,
@@ -328,7 +335,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
         uniqueId = orderFormItemsRef.current[index].uniqueId
 
         mutationVariables = {
-          orderItems: [{ uniqueId, quantity }]
+          orderItems: [{ uniqueId, quantity }],
         }
 
         return mutateUpdateQuantity({
