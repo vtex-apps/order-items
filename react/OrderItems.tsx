@@ -215,11 +215,37 @@ export const OrderItemsProvider: FC = ({ children }) => {
         },
       })
 
-      enqueueTask(() =>
-        mutateAddItem({ variables: { items: mutationInput } }).then(
-          ({ data }) => data!.addToCart
-        )
-      )
+      enqueueTask(() => {
+        return mutateAddItem({ variables: { items: mutationInput } })
+          .then(({ data }) => data!.addToCart)
+          .then(orderForm => {
+            // update the uniqueId of the items that were
+            // added locally with the version from the server
+            setOrderForm(prevOrderForm => ({
+              ...prevOrderForm,
+              items: prevOrderForm.items.map(item => {
+                const inputIndex = mutationInput.findIndex(
+                  inputItem => inputItem.id === +item.id
+                )
+
+                if (inputIndex === -1) {
+                  return item
+                }
+
+                const updatedItem = orderForm.items.find(
+                  updatedItem => updatedItem.id === item.id
+                )!
+
+                return {
+                  ...item,
+                  uniqueId: updatedItem.uniqueId,
+                }
+              }),
+            }))
+
+            return orderForm
+          })
+      })
     },
     [enqueueTask, mutateAddItem, setOrderForm]
   )
@@ -281,11 +307,11 @@ export const OrderItemsProvider: FC = ({ children }) => {
         type: LocalOrderTaskType.UPDATE_MUTATION,
         variables: mutationVariables,
       })
-      enqueueTask(() =>
-        mutateUpdateQuantity({
+      enqueueTask(() => {
+        return mutateUpdateQuantity({
           variables: mutationVariables,
         }).then(({ data }) => data!.updateItems)
-      )
+      })
     },
     [enqueueTask, mutateUpdateQuantity, setOrderForm]
   )
