@@ -287,6 +287,8 @@ export const OrderItemsProvider: FC = ({ children }) => {
           quantity,
         }
 
+        updatedItems[index] = newItem
+
         return {
           ...prevOrderForm,
           ...updateTotalizersAndValue({
