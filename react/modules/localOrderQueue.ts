@@ -36,6 +36,7 @@ const DEFAULT_LOCAL_ORDER_QUEUE: LocalOrderQueue = {
 type GetLocalOrderQueue = () => LocalOrderQueue
 type PushLocalOrderQueueFn = (task: LocalOrderTask) => LocalOrderQueue
 type PopLocalOrderQueueFn = () => LocalOrderTask | undefined
+type UpdateLocalQueueItemIdsFn = (args: { fakeUniqueId: string, uniqueId: string }) => void
 
 export const getLocalOrderQueue: GetLocalOrderQueue = () => {
   let queue = null
@@ -56,11 +57,15 @@ export const getLocalOrderQueue: GetLocalOrderQueue = () => {
   return queue ?? DEFAULT_LOCAL_ORDER_QUEUE
 }
 
+const saveLocalOrderQueue = (orderQueue: LocalOrderQueue) => {
+  localStorage.setItem('orderQueue', JSON.stringify(orderQueue))
+}
+
 export const pushLocalOrderQueue: PushLocalOrderQueueFn = task => {
   const orderQueue = getLocalOrderQueue()
 
   orderQueue!.queue.push(task)
-  localStorage.setItem('orderQueue', JSON.stringify(orderQueue))
+  saveLocalOrderQueue(orderQueue)
 
   return orderQueue
 }
@@ -69,7 +74,30 @@ export const popLocalOrderQueue: PopLocalOrderQueueFn = () => {
   const orderQueue = getLocalOrderQueue()
   const task = orderQueue!.queue!.shift()
 
-  localStorage.setItem('orderQueue', JSON.stringify(orderQueue))
+  saveLocalOrderQueue(orderQueue)
 
   return task
+}
+
+export const updateLocalQueueItemIds: UpdateLocalQueueItemIdsFn = ({ fakeUniqueId, uniqueId }) => {
+  const orderQueue = getLocalOrderQueue()
+
+  orderQueue.queue = orderQueue.queue.map(task => {
+    if (task.type === LocalOrderTaskType.ADD_MUTATION) {
+      return task
+    }
+
+    const itemIndex = task.variables.orderItems.findIndex(input => 'uniqueId' in input && input.uniqueId === fakeUniqueId)
+
+    if (itemIndex > -1) {
+      task.variables.orderItems[itemIndex] = {
+        ...task.variables.orderItems[itemIndex],
+        uniqueId,
+      }
+    }
+
+    return task
+  })
+
+  saveLocalOrderQueue(orderQueue)
 }

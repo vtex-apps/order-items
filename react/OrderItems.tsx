@@ -22,6 +22,7 @@ import {
   getLocalOrderQueue,
   popLocalOrderQueue,
   pushLocalOrderQueue,
+  updateLocalQueueItemIds,
 } from './modules/localOrderQueue'
 import {
   adjustForItemInput,
@@ -220,7 +221,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
           .then(({ data }) => data!.addToCart)
           .then(orderForm => {
             // update the uniqueId of the items that were
-            // added locally with the version from the server
+            // added locally with the value from the server
             setOrderForm(prevOrderForm => ({
               ...prevOrderForm,
               items: prevOrderForm.items.map(item => {
@@ -229,12 +230,19 @@ export const OrderItemsProvider: FC = ({ children }) => {
                 )
 
                 if (inputIndex === -1) {
+                  // this item wasn't part of the initial mutation, skip it
                   return item
                 }
 
                 const updatedItem = orderForm.items.find(
                   updatedItem => updatedItem.id === item.id
                 )!
+
+                const fakeUniqueId = item.uniqueId
+
+                // update all mutations in the queue that referenced
+                // this item with it's fake `uniqueId`
+                updateLocalQueueItemIds({ fakeUniqueId, uniqueId: updatedItem.uniqueId })
 
                 return {
                   ...item,
