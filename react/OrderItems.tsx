@@ -309,7 +309,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
         }
       })
 
-      const mutationVariables = {
+      let mutationVariables = {
         orderItems: [{ uniqueId, quantity }],
       }
 
@@ -317,7 +317,20 @@ export const OrderItemsProvider: FC = ({ children }) => {
         type: LocalOrderTaskType.UPDATE_MUTATION,
         variables: mutationVariables,
       })
+
       enqueueTask(() => {
+        // here we need to update the uniqueId again in the mutation
+        // because it may have been a "fake" `uniqueId` that were generated
+        // locally so we could manage the items better.
+        // so, we will read the value again using the orderFormItemsRef because
+        // it will contain the latest value, i.e. will have the *actual* uniqueId
+        // for this item.
+        uniqueId = orderFormItemsRef.current[index].uniqueId
+
+        mutationVariables = {
+          orderItems: [{ uniqueId, quantity }]
+        }
+
         return mutateUpdateQuantity({
           variables: mutationVariables,
         }).then(({ data }) => data!.updateItems)
