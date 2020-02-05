@@ -385,12 +385,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
 }
 
 export const useOrderItems = () => {
-  const context = useContext(OrderItemsContext)
-  if (context === undefined) {
-    throw new Error('useOrderItems must be used within a OrderItemsProvider')
-  }
-
-  return context
+  return useContext(OrderItemsContext)
 }
 
 export default { OrderItemsProvider, useOrderItems }
