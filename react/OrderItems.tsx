@@ -134,13 +134,13 @@ const useEnqueueTask = () => {
   const enqueueTask = useCallback<(task: () => Promise<OrderForm>) => void>(
     task => {
       enqueue(task).then(
-        orderForm => {
+        (orderForm: OrderForm) => {
           popLocalOrderQueue()
           if (queueStatusRef.current === QueueStatus.FULFILLED) {
             setOrderForm(orderForm)
           }
         },
-        error => {
+        (error: any) => {
           if (!error || error.code !== 'TASK_CANCELLED') {
             throw error
           }
@@ -185,7 +185,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
         .filter(
           orderFormItem =>
             orderFormItemsRef.current.findIndex(
-              item => item.id === orderFormItem.id
+              (item: any) => item.id === orderFormItem.id
             ) === -1
         )
 
@@ -194,7 +194,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
         return
       }
 
-      setOrderForm(prevOrderForm => ({
+      setOrderForm((prevOrderForm: OrderForm) => ({
         ...prevOrderForm,
         items: [...orderFormItemsRef.current, ...orderFormItems],
         totalizers: orderFormItems.reduce(
@@ -222,7 +222,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
           .then(orderForm => {
             // update the uniqueId of the items that were
             // added locally with the value from the server
-            setOrderForm(prevOrderForm => ({
+            setOrderForm((prevOrderForm: OrderForm) => ({
               ...prevOrderForm,
               items: prevOrderForm.items.map(item => {
                 const inputIndex = mutationInput.findIndex(
@@ -268,12 +268,12 @@ export const OrderItemsProvider: FC = ({ children }) => {
 
       if (input.id) {
         index = orderFormItemsRef.current.findIndex(
-          orderItem => orderItem.id === input.id
+          (orderItem: any) => orderItem.id === input.id
         )
       } else if ('uniqueId' in input) {
         uniqueId = input.uniqueId
         index = orderFormItemsRef.current.findIndex(
-          orderItem => orderItem.uniqueId === input.uniqueId
+          (orderItem: any) => orderItem.uniqueId === input.uniqueId
         )
       } else {
         index = input.index ?? -1
@@ -289,7 +289,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
 
       const quantity = input.quantity ?? 1
 
-      setOrderForm(prevOrderForm => {
+      setOrderForm((prevOrderForm: OrderForm) => {
         const updatedItems = prevOrderForm.items.slice()
 
         const oldItem = updatedItems[index]
