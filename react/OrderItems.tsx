@@ -141,6 +141,7 @@ const useEnqueueTask = () => {
           }
         },
         (error: any) => {
+          popLocalOrderQueue()
           if (!error || error.code !== 'TASK_CANCELLED') {
             throw error
           }
