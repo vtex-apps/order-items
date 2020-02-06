@@ -60,9 +60,9 @@ const updateTotalizersAndValue = ({
   const newPrice = newItem.price * newItem.quantity
   const subtotalDifference = newPrice - oldPrice
 
-  const oldDiscount = (oldItem.price - oldItem.sellingPrice) * oldItem.quantity
-  const newDiscount = (newItem.price - newItem.sellingPrice) * newItem.quantity
-  const discountDifference = oldDiscount - newDiscount
+  const oldDiscount = (oldItem.sellingPrice - oldItem.price) * oldItem.quantity
+  const newDiscount = (newItem.sellingPrice - newItem.price) * newItem.quantity
+  const discountDifference = newDiscount - oldDiscount
 
   const newTotalizers = totalizers.map((totalizer: Totalizer) => {
     switch (totalizer.id) {
@@ -77,13 +77,13 @@ const updateTotalizersAndValue = ({
 
   return {
     totalizers: newTotalizers,
-    value: currentValue + subtotalDifference + discountDifference,
+    value: currentValue + subtotalDifference - discountDifference,
   }
 }
 
 const addToTotalizers = (totalizers: Totalizer[], item: Item): Totalizer[] => {
   const itemPrice = item.price * item.quantity
-  const itemDiscount = (item.price - item.sellingPrice) * item.quantity
+  const itemDiscount = (item.sellingPrice - item.price) * item.quantity
 
   if (!totalizers.length) {
     return [
@@ -95,7 +95,7 @@ const addToTotalizers = (totalizers: Totalizer[], item: Item): Totalizer[] => {
       {
         id: Totalizers.DISCOUNT,
         name: 'Discounts Total',
-        value: -itemDiscount,
+        value: itemDiscount,
       },
     ]
   }
@@ -110,7 +110,7 @@ const addToTotalizers = (totalizers: Totalizer[], item: Item): Totalizer[] => {
       case Totalizers.DISCOUNT:
         return {
           ...totalizer,
-          value: totalizer.value - itemDiscount,
+          value: totalizer.value + itemDiscount,
         }
       default:
         return totalizer
