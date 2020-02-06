@@ -89,7 +89,7 @@ export const updateLocalQueueItemIds: UpdateLocalQueueItemIdsFn = ({
   const orderQueue = getLocalOrderQueue()
 
   orderQueue.queue = orderQueue.queue.map(task => {
-    if (task.type === LocalOrderTaskType.ADD_MUTATION) {
+    if (task.type !== LocalOrderTaskType.UPDATE_MUTATION) {
       return task
     }
 
