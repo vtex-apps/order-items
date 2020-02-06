@@ -190,7 +190,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
         )
 
       if (orderFormItems.length === 0) {
-        // all items already exists in the minicart
+        // all items already exist in the cart
         return
       }
 
@@ -280,7 +280,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
       }
 
       if (index < 0 || index >= orderFormItemsRef.current.length) {
-        throw new Error('Item not found')
+        throw new Error(`Item ${input.id || input.uniqueId} not found`)
       }
 
       if (!uniqueId) {
