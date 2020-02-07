@@ -10,8 +10,8 @@ import { mockOrderForm } from '../__mocks__/mockOrderForm'
 import { OrderItemsProvider, useOrderItems } from '../OrderItems'
 
 const mockUpdateItemMutation = (
-  args: Partial<Item>[],
-  result: Partial<Item>[]
+  args: Array<Partial<Item>>,
+  result: Array<Partial<Item>>
 ) => ({
   request: {
     query: UpdateItem,

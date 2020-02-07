@@ -31,7 +31,7 @@ import {
 } from './utils'
 
 interface Context {
-  addItem: (props: Partial<Item>[]) => void
+  addItem: (props: Array<Partial<Item>>) => void
   updateQuantity: (props: Partial<Item>) => void
   removeItem: (props: Partial<Item>) => void
 }
@@ -176,7 +176,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
   >(AddToCart)
 
   const addItem = useCallback(
-    (items: Partial<Item>[]) => {
+    (items: Array<Partial<Item>>) => {
       const mutationInput = items.map(adjustForItemInput)
 
       const orderFormItems = mutationInput
@@ -220,7 +220,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
       enqueueTask(() => {
         return mutateAddItem({ variables: { items: mutationInput } })
           .then(({ data }) => data!.addToCart)
-          .then(orderForm => {
+          .then(updatedOrderForm => {
             // update the uniqueId of the items that were
             // added locally with the value from the server
             setOrderForm((prevOrderForm: OrderForm) => ({
@@ -235,8 +235,8 @@ export const OrderItemsProvider: FC = ({ children }) => {
                   return item
                 }
 
-                const updatedItem = orderForm.items.find(
-                  updatedItem => updatedItem.id === item.id
+                const updatedItem = updatedOrderForm.items.find(
+                  updatedOrderFormItem => updatedOrderFormItem.id === item.id
                 )!
 
                 const fakeUniqueId = item.uniqueId
@@ -255,7 +255,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
               }),
             }))
 
-            return orderForm
+            return updatedOrderForm
           })
       })
     },

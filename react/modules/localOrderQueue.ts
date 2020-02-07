@@ -7,11 +7,11 @@ type UpdateQuantityInput =
   | { index: number; quantity: number }
   | { uniqueId: string; quantity: number }
 
-type UpdateQuantityMutationVariables = {
+interface UpdateQuantityMutationVariables {
   orderItems: UpdateQuantityInput[]
 }
 
-type AddItemMutationVariables = {
+interface AddItemMutationVariables {
   items: OrderFormItemInput[]
 }
 

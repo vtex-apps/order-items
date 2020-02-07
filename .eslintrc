@@ -1,9 +1,13 @@
 {
-  "extends": "vtex",
+  "extends": "vtex-react",
   "root": true,
   "env": {
     "node": true,
     "es6": true,
-    "jest": true
+    "jest": true,
+    "browser": true
+  },
+  "rules": {
+    "@typescript-eslint/no-empty-function": "off"
   }
 }
