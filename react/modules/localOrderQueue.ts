@@ -3,7 +3,7 @@ export enum LocalOrderTaskType {
   UPDATE_MUTATION = 'update_mutation',
 }
 
-type UpdateQuantityInput =
+export type UpdateQuantityInput =
   | { index: number; quantity: number }
   | { uniqueId: string; quantity: number }
 
@@ -18,6 +18,7 @@ interface AddItemMutationVariables {
 type LocalOrderTask =
   | {
       variables: AddItemMutationVariables
+      orderFormItems: Item[]
       type: LocalOrderTaskType.ADD_MUTATION
     }
   | {
