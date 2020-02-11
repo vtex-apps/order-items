@@ -9,7 +9,7 @@
     "debounce": "^1.2.0",
     "react": "^16.8.3",
     "react-dom": "^16.9.0",
-    "react-intl": "^2.7.2",
+    "react-intl": "3.9.1",
     "recompose": "^0.30.0",
     "uuid": "^3.3.3"
   },
