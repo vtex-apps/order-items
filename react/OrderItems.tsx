@@ -44,33 +44,61 @@ enum Totalizers {
 
 const updateTotalizersAndValue = ({
   totalizers,
-  currentValue,
+  currentValue = 0,
   newItem,
   oldItem,
 }: {
   totalizers: Totalizer[]
-  currentValue: number
+  currentValue?: number
   newItem: Item
-  oldItem: Item
+  oldItem?: Item
 }) => {
-  if (oldItem.availability !== AVAILABLE) {
+  if (oldItem?.availability !== AVAILABLE) {
     return { totalizers, value: currentValue }
   }
 
-  const oldPrice = oldItem.price * oldItem.quantity
+  const oldPrice = oldItem?.price ?? 0 * (oldItem?.quantity ?? 0)
   const newPrice = newItem.price * newItem.quantity
   const subtotalDifference = newPrice - oldPrice
 
-  const oldDiscount = (oldItem.sellingPrice - oldItem.price) * oldItem.quantity
+  const oldDiscount =
+    (oldItem?.sellingPrice ?? 0 - (oldItem?.price ?? 0)) *
+    (oldItem?.quantity ?? 0)
   const newDiscount = (newItem.sellingPrice - newItem.price) * newItem.quantity
   const discountDifference = newDiscount - oldDiscount
 
-  const newTotalizers = totalizers.map((totalizer: Totalizer) => {
+  const updatedValue = currentValue + subtotalDifference + discountDifference
+
+  if (!totalizers.length) {
+    return {
+      totalizers: [
+        {
+          id: Totalizers.SUBTOTAL,
+          name: 'Items Total',
+          value: subtotalDifference,
+        },
+        {
+          id: Totalizers.DISCOUNT,
+          name: 'Discounts Total',
+          value: discountDifference,
+        },
+      ],
+      value: updatedValue,
+    }
+  }
+
+  const newTotalizers = totalizers.map(totalizer => {
     switch (totalizer.id) {
       case Totalizers.SUBTOTAL:
-        return { ...totalizer, value: totalizer.value + subtotalDifference }
+        return {
+          ...totalizer,
+          value: totalizer.value + subtotalDifference,
+        }
       case Totalizers.DISCOUNT:
-        return { ...totalizer, value: totalizer.value + discountDifference }
+        return {
+          ...totalizer,
+          value: totalizer.value + discountDifference,
+        }
       default:
         return totalizer
     }
@@ -78,45 +106,12 @@ const updateTotalizersAndValue = ({
 
   return {
     totalizers: newTotalizers,
-    value: currentValue + subtotalDifference + discountDifference,
+    value: updatedValue,
   }
 }
 
 const addToTotalizers = (totalizers: Totalizer[], item: Item): Totalizer[] => {
-  const itemPrice = item.price * item.quantity
-  const itemDiscount = (item.sellingPrice - item.price) * item.quantity
-
-  if (!totalizers.length) {
-    return [
-      {
-        id: Totalizers.SUBTOTAL,
-        name: 'Items Total',
-        value: itemPrice,
-      },
-      {
-        id: Totalizers.DISCOUNT,
-        name: 'Discounts Total',
-        value: itemDiscount,
-      },
-    ]
-  }
-
-  return totalizers.map(totalizer => {
-    switch (totalizer.id) {
-      case Totalizers.SUBTOTAL:
-        return {
-          ...totalizer,
-          value: totalizer.value + itemPrice,
-        }
-      case Totalizers.DISCOUNT:
-        return {
-          ...totalizer,
-          value: totalizer.value + itemDiscount,
-        }
-      default:
-        return totalizer
-    }
-  })
+  return updateTotalizersAndValue({ totalizers, newItem: item }).totalizers
 }
 
 const noop = async () => {}
