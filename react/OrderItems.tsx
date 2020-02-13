@@ -78,7 +78,7 @@ const updateTotalizersAndValue = ({
 
   return {
     totalizers: newTotalizers,
-    value: currentValue + subtotalDifference - discountDifference,
+    value: currentValue + subtotalDifference + discountDifference,
   }
 }
 
