@@ -301,6 +301,11 @@ export const OrderItemsProvider: FC = ({ children }) => {
     orderFormItemsRef.current = orderForm.items
   }, [orderForm.items])
 
+  /**
+   * Add the items to the order form.
+   *
+   * Returns if the items were added or not.
+   */
   const addItem = useCallback(
     (items: Array<Partial<Item>>) => {
       const mutationInput = items.map(adjustForItemInput)
@@ -318,7 +323,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
 
       if (orderFormItems.length === 0) {
         // all items already exist in the cart
-        return
+        return false
       }
 
       setOrderForm((prevOrderForm: OrderForm) => ({
@@ -345,6 +350,8 @@ export const OrderItemsProvider: FC = ({ children }) => {
       })
 
       enqueueTask(addItemsTask({ mutationInput, orderFormItems }))
+
+      return true
     },
     [addItemsTask, enqueueTask, setOrderForm]
   )
