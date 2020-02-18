@@ -2,7 +2,7 @@ import { adjust } from 'ramda'
 import React, { FunctionComponent } from 'react'
 import { MockedProvider } from '@apollo/react-testing'
 import { act, render, fireEvent } from '@vtex/test-tools/react'
-import { updateItems as UpdateItem } from 'vtex.checkout-resources/Mutations'
+import UpdateItem from 'vtex.checkout-resources/MutationUpdateItems'
 import { OrderFormProvider, useOrderForm } from 'vtex.order-manager/OrderForm'
 import { OrderQueueProvider } from 'vtex.order-manager/OrderQueue'
 

@@ -7,7 +7,7 @@ import React, {
   useRef,
 } from 'react'
 import { useMutation } from 'react-apollo'
-import { updateItems as UpdateItems } from 'vtex.checkout-resources/Mutations'
+import UpdateItems from 'vtex.checkout-resources/MutationUpdateItems'
 import {
   QueueStatus,
   useOrderQueue,

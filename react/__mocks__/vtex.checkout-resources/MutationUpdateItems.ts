@@ -1,6 +1,6 @@
 import gql from 'graphql-tag'
 
-export const updateItems = gql`
+export default gql`
   mutation MockMutation($orderItems: [ItemInput]) {
     updateItems(orderItems: $orderItems) {
       items
