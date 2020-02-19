@@ -5196,17 +5196,17 @@ verror@1.10.0:
   version "0.22.0"
   resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-graphql@0.22.0/public/@types/vtex.checkout-graphql#8431798aa058506b3a67a50b14e0a836400abf4b"
 
-"vtex.checkout-resources@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-resources@0.16.0/public/@types/vtex.checkout-resources":
-  version "0.16.0"
-  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-resources@0.16.0/public/@types/vtex.checkout-resources#f1d52ec086fc0bfb4d07b17e870602f506c46509"
+"vtex.checkout-resources@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-resources@0.18.0/public/@types/vtex.checkout-resources":
+  version "0.18.0"
+  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-resources@0.18.0/public/@types/vtex.checkout-resources#d0fc5740eb90378abbe5180afd4f1756ec379f38"
 
-"vtex.order-manager@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.7.1/public/@types/vtex.order-manager":
-  version "0.7.1"
-  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.7.1/public/@types/vtex.order-manager#c46f287a72dedd678a4c7afc0103f9805c1c4cce"
+"vtex.order-manager@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.8.0/public/@types/vtex.order-manager":
+  version "0.8.0"
+  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.8.0/public/@types/vtex.order-manager#c2246db14b75b10cdeafee1636de310bff746d6c"
 
-"vtex.render-runtime@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.91.0/public/@types/vtex.render-runtime":
-  version "8.91.0"
-  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.91.0/public/@types/vtex.render-runtime#7223aebbd3645b633b52fc3c166c7803cbe700d4"
+"vtex.render-runtime@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.91.2/public/@types/vtex.render-runtime":
+  version "8.91.2"
+  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.91.2/public/@types/vtex.render-runtime#7f357b1dbe153d0fa08c554caabb5535695b5cda"
 
 w3c-hr-time@^1.0.1:
   version "1.0.1"
