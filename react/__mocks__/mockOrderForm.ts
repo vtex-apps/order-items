@@ -1,4 +1,4 @@
-export const mockOrderForm = {
+export const mockOrderForm = Object.freeze({
   items: [
     {
       additionalInfo: {
@@ -19,6 +19,7 @@ export const mockOrderForm = {
       skuName: 'Test SKU 0',
       skuSpecifications: [],
       uniqueId: 'SomeUniqueId0',
+      seller: '0',
     },
     {
       additionalInfo: {
@@ -39,6 +40,7 @@ export const mockOrderForm = {
       skuName: 'Test SKU 1',
       skuSpecifications: [],
       uniqueId: 'SomeUniqueId1',
+      seller: '0',
     },
     {
       additionalInfo: {
@@ -59,6 +61,7 @@ export const mockOrderForm = {
       skuName: 'Test SKU 2',
       skuSpecifications: [],
       uniqueId: 'SomeUniqueId2',
+      seller: '0',
     },
   ],
   marketingData: null,
@@ -70,4 +73,4 @@ export const mockOrderForm = {
     },
   ],
   value: 9585000,
-}
+})

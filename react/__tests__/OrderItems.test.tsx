@@ -10,8 +10,8 @@ import { mockOrderForm } from '../__mocks__/mockOrderForm'
 import { OrderItemsProvider, useOrderItems } from '../OrderItems'
 
 const mockUpdateItemMutation = (
-  args: Partial<Item>[],
-  result: Partial<Item>[]
+  args: Array<Partial<Item>>,
+  result: Array<Partial<Item>>
 ) => ({
   request: {
     query: UpdateItem,
@@ -30,22 +30,6 @@ const mockUpdateItemMutation = (
 })
 
 describe('OrderItems', () => {
-  it('should throw when useOrderItems is called outside a OrderItemsProvider', () => {
-    const oldConsoleError = console.error
-    console.error = () => {}
-
-    const Component: FunctionComponent = () => {
-      useOrderItems()
-      return <div>foo</div>
-    }
-
-    expect(() => render(<Component />)).toThrow(
-      'useOrderItems must be used within a OrderItemsProvider'
-    )
-
-    console.error = oldConsoleError
-  })
-
   it('should optimistically update itemList when updateQuantity is called', async () => {
     const Component: FunctionComponent = () => {
       const {
@@ -94,7 +78,12 @@ describe('OrderItems', () => {
     })
     expect(getByText(`${mockOrderForm.items[1].name}: 123`)).toBeTruthy() // optimistic response
 
-    await act(() => new Promise(resolve => setTimeout(() => resolve()))) // waits for actual mutation result
+    await act(
+      () =>
+        new Promise<void>(resolve => {
+          setTimeout(() => resolve())
+        })
+    ) // waits for actual mutation result
     expect(getByText(`${mockOrderForm.items[1].name}: 42`)).toBeTruthy()
   })
 
@@ -152,7 +141,9 @@ describe('OrderItems', () => {
       )
     ).toBeFalsy() // optimistic response
 
-    await act(() => new Promise(resolve => setTimeout(() => resolve()))) // waits for actual mutation result
+    await act(
+      () => new Promise<void>(resolve => setTimeout(() => resolve()))
+    ) // waits for actual mutation result
     expect(getByText(`${mockOrderForm.items[0].name}: 7`)).toBeTruthy()
   })
 })

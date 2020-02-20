@@ -5,6 +5,15 @@ interface OrderForm {
   value: number
 }
 
+interface OrderFormItemInput {
+  id?: number
+  index?: number
+  quantity?: number
+  seller?: string
+  uniqueId?: string
+  options?: AssemblyOptionInput[]
+}
+
 interface Item {
   additionalInfo: ItemAdditionalInfo
   availability: string
@@ -19,8 +28,10 @@ interface Item {
   productId: string
   quantity: number
   sellingPrice: number
+  seller: string
   skuName: string
   skuSpecifications: SKUSpecification[]
+  options?: AssemblyOptionInput[]
   uniqueId: string
 }
 

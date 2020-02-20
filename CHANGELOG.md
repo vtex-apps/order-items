@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+- `addItem` function to `OrderItemsContext`.
+
+### Changed
+- All pending operations are now cached in `localStorage` in order to enable offline-interactions.
+- Order form is now cached in `localStorage`.
+
 ## [0.5.2] - 2020-02-19
 
 ### Changed

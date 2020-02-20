@@ -5,211 +5,426 @@ import React, {
   useContext,
   useMemo,
   useRef,
+  useEffect,
 } from 'react'
 import { useMutation } from 'react-apollo'
 import UpdateItems from 'vtex.checkout-resources/MutationUpdateItems'
+import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
+import { useOrderForm } from 'vtex.order-manager/OrderForm'
 import {
-  QueueStatus,
   useOrderQueue,
   useQueueStatus,
+  QueueStatus,
 } from 'vtex.order-manager/OrderQueue'
-import { useOrderForm } from 'vtex.order-manager/OrderForm'
 
-const AVAILABLE = 'available'
-const TASK_CANCELLED = 'TASK_CANCELLED'
+import {
+  LocalOrderTaskType,
+  getLocalOrderQueue,
+  popLocalOrderQueue,
+  pushLocalOrderQueue,
+  updateLocalQueueItemIds,
+  UpdateQuantityInput,
+} from './modules/localOrderQueue'
+import {
+  adjustForItemInput,
+  mapItemInputToOrderFormItem,
+  AVAILABLE,
+} from './utils'
+
+interface Context {
+  addItem: (props: Array<Partial<Item>>) => void
+  updateQuantity: (props: Partial<Item>) => void
+  removeItem: (props: Partial<Item>) => void
+}
 
 enum Totalizers {
   SUBTOTAL = 'Items',
   DISCOUNT = 'Discounts',
 }
 
-interface Context {
-  updateQuantity: (props: Partial<Item>) => void
-  removeItem: (props: Partial<Item>) => void
-}
-
-interface CancellablePromiseLike<T> extends Promise<T> {
-  cancel: () => void
-}
-
-interface EnqueuedTask {
-  promise?: CancellablePromiseLike<any>
-  variables?: any
-}
-
-const OrderItemsContext = createContext<Context | undefined>(undefined)
-
-const noop = async (_: Partial<Item>) => {}
-
-const maybeUpdateTotalizers = (
-  totalizers: Totalizer[],
-  value: number,
-  oldItem: Item,
+const updateTotalizersAndValue = ({
+  totalizers,
+  currentValue = 0,
+  newItem,
+  oldItem,
+}: {
+  totalizers: Totalizer[]
+  currentValue?: number
   newItem: Item
-) => {
-  if (oldItem.availability !== AVAILABLE) {
-    return {}
+  oldItem?: Item
+}) => {
+  if (oldItem?.availability !== AVAILABLE) {
+    return { totalizers, value: currentValue }
   }
 
-  const oldPrice = oldItem.price * oldItem.quantity
+  const oldItemPrice = oldItem.price ?? 0
+  const oldItemQuantity = oldItem.quantity ?? 0
+  const oldItemSellingPrice = oldItem.sellingPrice ?? 0
+
+  const oldPrice = oldItemPrice * oldItemQuantity
   const newPrice = newItem.price * newItem.quantity
   const subtotalDifference = newPrice - oldPrice
 
-  const oldDiscount = (oldItem.sellingPrice - oldItem.price) * oldItem.quantity
+  const oldDiscount = (oldItemSellingPrice - oldItemPrice) * oldItemQuantity
   const newDiscount = (newItem.sellingPrice - newItem.price) * newItem.quantity
   const discountDifference = newDiscount - oldDiscount
 
-  const newTotalizers = totalizers.map((totalizer: Totalizer) => {
+  const updatedValue = currentValue + subtotalDifference + discountDifference
+
+  if (!totalizers.length) {
+    return {
+      totalizers: [
+        {
+          id: Totalizers.SUBTOTAL,
+          name: 'Items Total',
+          value: subtotalDifference,
+        },
+        {
+          id: Totalizers.DISCOUNT,
+          name: 'Discounts Total',
+          value: discountDifference,
+        },
+      ],
+      value: updatedValue,
+    }
+  }
+
+  const newTotalizers = totalizers.map(totalizer => {
     switch (totalizer.id) {
       case Totalizers.SUBTOTAL:
-        return { ...totalizer, value: totalizer.value + subtotalDifference }
+        return {
+          ...totalizer,
+          value: totalizer.value + subtotalDifference,
+        }
       case Totalizers.DISCOUNT:
-        return { ...totalizer, value: totalizer.value + discountDifference }
+        return {
+          ...totalizer,
+          value: totalizer.value + discountDifference,
+        }
       default:
         return totalizer
     }
   })
-  const newValue = value + subtotalDifference + discountDifference
 
-  return { totalizers: newTotalizers, value: newValue }
+  return {
+    totalizers: newTotalizers,
+    value: updatedValue,
+  }
 }
 
-const enqueueTask = ({
-  task,
-  enqueue,
-  queueStatusRef,
-  setOrderForm,
-  taskId,
-}: {
-  task: () => Promise<any>
-  enqueue: (task: any, id?: string) => CancellablePromiseLike<any>
-  queueStatusRef: React.MutableRefObject<QueueStatus>
-  setOrderForm: (orderForm: Partial<OrderForm>) => void
-  taskId?: string
-}) => {
-  const promise = enqueue(task, taskId)
-  const cancelPromise = promise.cancel
-  const newPromise = promise
-    .then((newOrderForm: OrderForm) => {
-      if (queueStatusRef.current === QueueStatus.FULFILLED) {
-        setOrderForm(newOrderForm)
-      }
-    })
-    .catch((error: any) => {
-      if (!error || error.code !== TASK_CANCELLED) {
-        throw error
-      }
-    }) as CancellablePromiseLike<void>
+const addToTotalizers = (totalizers: Totalizer[], item: Item): Totalizer[] => {
+  return updateTotalizersAndValue({ totalizers, newItem: item }).totalizers
+}
 
-  newPromise.cancel = cancelPromise
-  return newPromise
+const noop = async () => {}
+
+const OrderItemsContext = createContext<Context>({
+  addItem: noop,
+  updateQuantity: noop,
+  removeItem: noop,
+})
+
+const useEnqueueTask = () => {
+  const { enqueue, listen } = useOrderQueue()
+  const queueStatusRef = useQueueStatus(listen)
+  const { setOrderForm } = useOrderForm()
+
+  const enqueueTask = useCallback<(task: () => Promise<OrderForm>) => void>(
+    task =>
+      enqueue(task).then(
+        (orderForm: OrderForm) => {
+          popLocalOrderQueue()
+          if (queueStatusRef.current === QueueStatus.FULFILLED) {
+            setOrderForm(orderForm)
+          }
+        },
+        (error: any) => {
+          popLocalOrderQueue()
+          if (!error || error.code !== 'TASK_CANCELLED') {
+            throw error
+          }
+        }
+      ),
+    [enqueue, queueStatusRef, setOrderForm]
+  )
+
+  return enqueueTask
+}
+
+const useAddItemsTask = (
+  fakeUniqueIdMapRef: React.MutableRefObject<FakeUniqueIdMap>
+) => {
+  const [mutateAddItem] = useMutation<
+    { addToCart: OrderForm },
+    { items: OrderFormItemInput[] }
+  >(AddToCart)
+  const { setOrderForm } = useOrderForm()
+
+  const addItemTask = useCallback(
+    ({
+      mutationInput,
+      orderFormItems,
+    }: {
+      mutationInput: OrderFormItemInput[]
+      orderFormItems: Item[]
+    }) => () => {
+      return mutateAddItem({ variables: { items: mutationInput } })
+        .then(({ data }) => data!.addToCart)
+        .then(updatedOrderForm => {
+          // update the uniqueId of the items that were
+          // added locally with the value from the server
+          orderFormItems.forEach(orderFormItem => {
+            const updatedItem = updatedOrderForm.items.find(
+              updatedOrderFormItem =>
+                updatedOrderFormItem.id === orderFormItem.id
+            )!
+
+            const fakeUniqueId = orderFormItem.uniqueId
+
+            // update all mutations in the queue that referenced
+            // this item with it's fake `uniqueId`
+            updateLocalQueueItemIds({
+              fakeUniqueId,
+              uniqueId: updatedItem.uniqueId,
+            })
+            fakeUniqueIdMapRef.current[fakeUniqueId] = updatedItem.uniqueId
+          })
+
+          // update the `uniqueId` in the remaining items on local orderForm
+          setOrderForm((prevOrderForm: OrderForm) => {
+            return {
+              ...prevOrderForm,
+              items: prevOrderForm.items.map(item => {
+                const inputIndex = mutationInput.findIndex(
+                  inputItem => inputItem.id === +item.id
+                )
+
+                if (inputIndex === -1) {
+                  // this item wasn't part of the initial mutation, skip it
+                  return item
+                }
+
+                const updatedItem = updatedOrderForm.items.find(
+                  updatedOrderFormItem => updatedOrderFormItem.id === item.id
+                )!
+
+                return {
+                  ...item,
+                  uniqueId: updatedItem.uniqueId,
+                }
+              }),
+            }
+          })
+
+          return updatedOrderForm
+        })
+    },
+    [fakeUniqueIdMapRef, mutateAddItem, setOrderForm]
+  )
+
+  return addItemTask
+}
+
+const useUpdateItemsTask = (
+  fakeUniqueIdMapRef: React.MutableRefObject<FakeUniqueIdMap>
+) => {
+  const [mutateUpdateQuantity] = useMutation<UpdateItemsMutation>(UpdateItems)
+
+  const updateItemTask = useCallback(
+    ({ items }: { items: UpdateQuantityInput[] }) => () => {
+      const mutationVariables = {
+        orderItems: items.map(input => {
+          if ('uniqueId' in input) {
+            // here we need to update the uniqueId again in the mutation
+            // because it may have been a "fake" `uniqueId` that were generated
+            // locally so we could manage the items when offline.
+            //
+            // so, we will read the value using the `fakeUniqueIdMapRef` because
+            // it maps a fake `uniqueId` to a real `uniqueId` that was generated by
+            // the API. if it doesn't contain the value, we will assume that this uniqueId
+            // is a real one.
+            const uniqueId =
+              fakeUniqueIdMapRef.current[input.uniqueId] || input.uniqueId
+
+            return { uniqueId, quantity: input.quantity }
+          }
+
+          return input
+        }),
+      }
+
+      return mutateUpdateQuantity({
+        variables: mutationVariables,
+      }).then(({ data }) => data!.updateItems)
+    },
+    [fakeUniqueIdMapRef, mutateUpdateQuantity]
+  )
+
+  return updateItemTask
+}
+
+type FakeUniqueIdMap = { [fakeUniqueId: string]: string }
+
+const useFakeUniqueIdMap = () => {
+  const fakeUniqueIdMapRef = useRef<FakeUniqueIdMap>({})
+  const { listen } = useOrderQueue()
+
+  useEffect(
+    () =>
+      listen(QueueStatus.FULFILLED, () => {
+        // avoid leaking "fake" `uniqueId`.
+        // this works because everytime we fulfill the queue, we know
+        // for sure that we won't have any locally generated uniqueId's
+        // left to map to a real uniqueId.
+        fakeUniqueIdMapRef.current = {}
+      }),
+    [listen]
+  )
+
+  return fakeUniqueIdMapRef
+}
+
+interface UpdateItemsMutation {
+  updateItems: OrderForm
 }
 
 export const OrderItemsProvider: FC = ({ children }) => {
-  const { enqueue, listen, isWaiting } = useOrderQueue()
-  const { loading, orderForm, setOrderForm } = useOrderForm()
+  const { orderForm, setOrderForm } = useOrderForm()
 
-  const [updateItems] = useMutation(UpdateItems)
+  const fakeUniqueIdMapRef = useFakeUniqueIdMap()
 
-  const queueStatusRef = useQueueStatus(listen)
-  const lastUpdateTaskRef = useRef({
-    promise: undefined,
-    variables: undefined,
-  } as EnqueuedTask)
+  const enqueueTask = useEnqueueTask()
+  const addItemsTask = useAddItemsTask(fakeUniqueIdMapRef)
+  const updateItemsTask = useUpdateItemsTask(fakeUniqueIdMapRef)
 
-  if (!orderForm) {
-    throw new Error('Unable to fetch order form.')
-  }
+  const orderFormItemsRef = useRef(orderForm.items)
 
-  const { items, totalizers, value: orderFormValue } = orderForm
+  useEffect(() => {
+    orderFormItemsRef.current = orderForm.items
+  }, [orderForm.items])
 
-  const itemIds = useCallback(
-    (props: Partial<Item>) => {
-      let index = props.index
-      let uniqueId = props.uniqueId
+  /**
+   * Add the items to the order form.
+   *
+   * Returns if the items were added or not.
+   */
+  const addItem = useCallback(
+    (items: Array<Partial<Item>>) => {
+      const mutationInput = items.map(adjustForItemInput)
 
-      if (index) {
-        uniqueId = items[index].uniqueId as string
-      } else if (uniqueId) {
-        index = items.findIndex(
-          (item: Item) => item.uniqueId === props.uniqueId
-        ) as number
-      } else {
-        throw new Error(
-          'Either index or uniqueId must be provided when updating an item'
+      const orderFormItems = mutationInput
+        .map((itemInput, index) =>
+          mapItemInputToOrderFormItem(itemInput, items[index])
         )
+        .filter(
+          orderFormItem =>
+            orderFormItemsRef.current.findIndex(
+              (item: any) => item.id === orderFormItem.id
+            ) === -1
+        )
+
+      if (orderFormItems.length === 0) {
+        // all items already exist in the cart
+        return false
       }
 
-      return { index, uniqueId }
-    },
-    [items]
-  )
-
-  const updateOrderForm = useCallback(
-    (index: number, props: Partial<Item>) => {
-      const newItem = { ...items[index], ...props }
-
-      const updatedList = [
-        ...items.slice(0, index),
-        ...(props.quantity === 0 ? [] : [newItem]),
-        ...items.slice(index + 1),
-      ]
-
-      setOrderForm({
-        ...maybeUpdateTotalizers(
-          totalizers,
-          orderFormValue,
-          items[index],
-          newItem
+      setOrderForm((prevOrderForm: OrderForm) => ({
+        ...prevOrderForm,
+        items: [...orderFormItemsRef.current, ...orderFormItems],
+        totalizers: orderFormItems.reduce(
+          addToTotalizers,
+          prevOrderForm.totalizers ?? []
         ),
-        items: updatedList,
-      })
-    },
-    [items, totalizers, orderFormValue, setOrderForm]
-  )
+        value:
+          prevOrderForm.value +
+          orderFormItems.reduce(
+            (total, item) => total + item.sellingPrice * item.quantity,
+            0
+          ),
+      }))
 
-  const mutationTask = useCallback(
-    (items: Partial<Item>[]) => async () => {
-      const {
-        data: { updateItems: newOrderForm },
-      } = await updateItems({
+      pushLocalOrderQueue({
+        type: LocalOrderTaskType.ADD_MUTATION,
         variables: {
-          orderItems: items,
+          items: mutationInput,
         },
+        orderFormItems,
       })
 
-      return newOrderForm
+      enqueueTask(addItemsTask({ mutationInput, orderFormItems }))
+
+      return true
     },
-    [updateItems]
+    [addItemsTask, enqueueTask, setOrderForm]
   )
 
   const updateQuantity = useCallback(
-    async (props: Partial<Item>) => {
-      const { index, uniqueId } = itemIds(props)
-      updateOrderForm(index, { quantity: props.quantity })
-      const taskId = 'OrderItems-updateQuantity'
-      let items = [{ uniqueId, quantity: props.quantity }]
+    input => {
+      let index: number
+      let uniqueId = ''
 
-      if (lastUpdateTaskRef.current.promise && isWaiting(taskId)) {
-        lastUpdateTaskRef.current.promise.cancel()
-        items = [
-          ...lastUpdateTaskRef.current.variables.filter(
-            (item: Pick<Item, 'uniqueId'>) => item.uniqueId !== uniqueId
-          ),
-          ...items,
-        ]
+      if (input.id) {
+        index = orderFormItemsRef.current.findIndex(
+          (orderItem: any) => orderItem.id === input.id
+        )
+      } else if ('uniqueId' in input) {
+        uniqueId = input.uniqueId
+        index = orderFormItemsRef.current.findIndex(
+          (orderItem: any) => orderItem.uniqueId === input.uniqueId
+        )
+      } else {
+        index = input.index ?? -1
       }
 
-      lastUpdateTaskRef.current.promise = enqueueTask({
-        task: mutationTask(items),
-        enqueue,
-        queueStatusRef,
-        setOrderForm,
-        taskId,
+      if (index < 0 || index >= orderFormItemsRef.current.length) {
+        throw new Error(`Item ${input.id || input.uniqueId} not found`)
+      }
+
+      if (!uniqueId) {
+        uniqueId = orderFormItemsRef.current[index].uniqueId
+      }
+
+      const quantity = input.quantity ?? 1
+
+      setOrderForm((prevOrderForm: OrderForm) => {
+        const updatedItems = prevOrderForm.items.slice()
+
+        const oldItem = updatedItems[index]
+        const newItem = {
+          ...oldItem,
+          quantity,
+        }
+
+        if (quantity > 0) {
+          updatedItems[index] = newItem
+        } else {
+          updatedItems.splice(index, 1)
+        }
+
+        return {
+          ...prevOrderForm,
+          ...updateTotalizersAndValue({
+            totalizers: prevOrderForm.totalizers,
+            currentValue: prevOrderForm.value,
+            newItem,
+            oldItem,
+          }),
+          items: updatedItems,
+        }
       })
-      lastUpdateTaskRef.current.variables = items
+
+      const mutationVariables = {
+        orderItems: [{ uniqueId, quantity }],
+      }
+
+      pushLocalOrderQueue({
+        type: LocalOrderTaskType.UPDATE_MUTATION,
+        variables: mutationVariables,
+      })
+
+      enqueueTask(updateItemsTask({ items: mutationVariables.orderItems }))
     },
-    [enqueue, itemIds, mutationTask, setOrderForm, updateOrderForm]
+    [enqueueTask, setOrderForm, updateItemsTask]
   )
 
   const removeItem = useCallback(
@@ -217,16 +432,28 @@ export const OrderItemsProvider: FC = ({ children }) => {
     [updateQuantity]
   )
 
-  const value = useMemo(
-    () =>
-      loading
-        ? {
-            updateQuantity: noop,
-            removeItem: noop,
-          }
-        : { updateQuantity, removeItem },
-    [loading, updateQuantity, removeItem]
-  )
+  const value = useMemo(() => ({ addItem, updateQuantity, removeItem }), [
+    addItem,
+    updateQuantity,
+    removeItem,
+  ])
+
+  useEffect(() => {
+    const localOrderQueue = getLocalOrderQueue()
+
+    localOrderQueue.queue.forEach(task => {
+      if (task.type === LocalOrderTaskType.ADD_MUTATION) {
+        enqueueTask(
+          addItemsTask({
+            mutationInput: task.variables.items,
+            orderFormItems: task.orderFormItems,
+          })
+        )
+      } else if (task.type === LocalOrderTaskType.UPDATE_MUTATION) {
+        enqueueTask(updateItemsTask({ items: task.variables.orderItems }))
+      }
+    })
+  }, [addItemsTask, enqueueTask, updateItemsTask])
 
   return (
     <OrderItemsContext.Provider value={value}>
@@ -236,12 +463,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
 }
 
 export const useOrderItems = () => {
-  const context = useContext(OrderItemsContext)
-  if (context === undefined) {
-    throw new Error('useOrderItems must be used within a OrderItemsProvider')
-  }
-
-  return context
+  return useContext(OrderItemsContext)
 }
 
 export default { OrderItemsProvider, useOrderItems }
