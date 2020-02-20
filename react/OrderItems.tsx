@@ -9,7 +9,7 @@ import React, {
 } from 'react'
 import { useMutation } from 'react-apollo'
 import UpdateItems from 'vtex.checkout-resources/MutationUpdateItems'
-import AddToCart from 'vtex.checkout-resources/MutationAddToCard'
+import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
 import { useOrderForm } from 'vtex.order-manager/OrderForm'
 import {
   useOrderQueue,

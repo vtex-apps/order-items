@@ -7,9 +7,3 @@ export default gql`
     }
   }
 `
-
-export const addToCart = gql`
-  mutation MockAddToCart($items: [ItemInput]) {
-    items
-  }
-`

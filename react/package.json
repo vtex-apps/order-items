@@ -1,7 +1,10 @@
 {
+  "name": "vtex.order-items",
+  "version": "0.5.2",
+  "private": true,
+  "license": "UNLICENSED",
   "scripts": {
-    "test": "vtex-test-tools test",
-    "lint": "tsc --noEmit && eslint --ext ts,tsx ."
+    "test": "vtex-test-tools test"
   },
   "dependencies": {
     "@vtex/css-handles": "^1.0.0",
@@ -35,6 +38,5 @@
     "vtex.checkout-resources": "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-resources@0.18.0/public/@types/vtex.checkout-resources",
     "vtex.order-manager": "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.8.0/public/@types/vtex.order-manager",
     "vtex.render-runtime": "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.91.2/public/@types/vtex.render-runtime"
-  },
-  "version": "0.5.2"
+  }
 }
