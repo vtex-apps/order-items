@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Support for `marketingData` argument to be received by `addToCart`.
+
 ## [0.6.0] - 2020-02-20
 
 ### Added
