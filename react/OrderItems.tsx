@@ -32,7 +32,10 @@ import {
 } from './utils'
 
 interface Context {
-  addItem: (props: Array<Partial<Item>>) => void
+  addItem: (
+    items: Array<Partial<Item>>,
+    marketingData?: Partial<MarketingData>
+  ) => void
   updateQuantity: (props: Partial<Item>) => void
   removeItem: (props: Partial<Item>) => void
 }
@@ -156,19 +159,26 @@ const useAddItemsTask = (
 ) => {
   const [mutateAddItem] = useMutation<
     { addToCart: OrderForm },
-    { items: OrderFormItemInput[] }
+    { items: OrderFormItemInput[]; marketingData?: Partial<MarketingData> }
   >(AddToCart)
   const { setOrderForm } = useOrderForm()
 
   const addItemTask = useCallback(
     ({
-      mutationInput,
+      mutationInputItems,
+      mutationInputMarketingData,
       orderFormItems,
     }: {
-      mutationInput: OrderFormItemInput[]
+      mutationInputItems: OrderFormItemInput[]
+      mutationInputMarketingData?: Partial<MarketingData>
       orderFormItems: Item[]
     }) => () => {
-      return mutateAddItem({ variables: { items: mutationInput } })
+      return mutateAddItem({
+        variables: {
+          items: mutationInputItems,
+          marketingData: mutationInputMarketingData,
+        },
+      })
         .then(({ data }) => data!.addToCart)
         .then(updatedOrderForm => {
           // update the uniqueId of the items that were
@@ -195,7 +205,7 @@ const useAddItemsTask = (
             return {
               ...prevOrderForm,
               items: prevOrderForm.items.map(item => {
-                const inputIndex = mutationInput.findIndex(
+                const inputIndex = mutationInputItems.findIndex(
                   inputItem => inputItem.id === +item.id
                 )
 
@@ -213,6 +223,7 @@ const useAddItemsTask = (
                   uniqueId: updatedItem.uniqueId,
                 }
               }),
+              marketingData: mutationInputMarketingData,
             }
           })
 
@@ -263,7 +274,9 @@ const useUpdateItemsTask = (
   return updateItemTask
 }
 
-type FakeUniqueIdMap = { [fakeUniqueId: string]: string }
+interface FakeUniqueIdMap {
+  [fakeUniqueId: string]: string
+}
 
 const useFakeUniqueIdMap = () => {
   const fakeUniqueIdMapRef = useRef<FakeUniqueIdMap>({})
@@ -309,10 +322,10 @@ export const OrderItemsProvider: FC = ({ children }) => {
    * Returns if the items were added or not.
    */
   const addItem = useCallback(
-    (items: Array<Partial<Item>>) => {
-      const mutationInput = items.map(adjustForItemInput)
+    (items: Array<Partial<Item>>, marketingData?: Partial<MarketingData>) => {
+      const mutationInputItems = items.map(adjustForItemInput)
 
-      const orderFormItems = mutationInput
+      const orderFormItems = mutationInputItems
         .map((itemInput, index) =>
           mapItemInputToOrderFormItem(itemInput, items[index])
         )
@@ -335,6 +348,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
           addToTotalizers,
           prevOrderForm.totalizers ?? []
         ),
+        marketingData: marketingData ?? prevOrderForm.marketingData,
         value:
           prevOrderForm.value +
           orderFormItems.reduce(
@@ -346,12 +360,19 @@ export const OrderItemsProvider: FC = ({ children }) => {
       pushLocalOrderQueue({
         type: LocalOrderTaskType.ADD_MUTATION,
         variables: {
-          items: mutationInput,
+          items: mutationInputItems,
+          marketingData,
         },
         orderFormItems,
       })
 
-      enqueueTask(addItemsTask({ mutationInput, orderFormItems }))
+      enqueueTask(
+        addItemsTask({
+          mutationInputItems,
+          mutationInputMarketingData: marketingData,
+          orderFormItems,
+        })
+      )
 
       return true
     },
@@ -445,7 +466,8 @@ export const OrderItemsProvider: FC = ({ children }) => {
       if (task.type === LocalOrderTaskType.ADD_MUTATION) {
         enqueueTask(
           addItemsTask({
-            mutationInput: task.variables.items,
+            mutationInputItems: task.variables.items,
+            mutationInputMarketingData: task.variables.marketingData,
             orderFormItems: task.orderFormItems,
           })
         )
