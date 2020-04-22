@@ -10,12 +10,7 @@ import React, {
 import { useMutation } from 'react-apollo'
 import UpdateItems from 'vtex.checkout-resources/MutationUpdateItems'
 import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
-import { useOrderForm } from 'vtex.order-manager/OrderForm'
-import {
-  useOrderQueue,
-  useQueueStatus,
-  QueueStatus,
-} from 'vtex.order-manager/OrderQueue'
+import { OrderForm, OrderQueue } from 'vtex.order-manager'
 
 import {
   LocalOrderTaskType,
@@ -30,6 +25,9 @@ import {
   mapItemInputToOrderFormItem,
   AVAILABLE,
 } from './utils'
+
+const { useOrderForm } = OrderForm
+const { useOrderQueue, useQueueStatus, QueueStatus } = OrderQueue
 
 interface Context {
   addItem: (
@@ -132,7 +130,9 @@ const useEnqueueTask = () => {
   const queueStatusRef = useQueueStatus(listen)
   const { setOrderForm } = useOrderForm()
 
-  const enqueueTask = useCallback<(task: () => Promise<OrderForm>) => void>(
+  const enqueueTask = useCallback<
+    (task: () => Promise<OrderForm>) => PromiseLike<void>
+  >(
     task =>
       enqueue(task).then(
         (orderForm: OrderForm) => {

@@ -1,6 +1,6 @@
 interface OrderForm {
   items: Item[]
-  marketingData: MarketingData | null
+  marketingData: MarketingData | undefined
   totalizers: Totalizer[]
   value: number
 }
