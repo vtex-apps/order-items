@@ -14,7 +14,7 @@ interface OrderFormItemInput {
   options?: AssemblyOptionInput[]
 }
 
-interface Item {
+interface CatalogItem {
   additionalInfo: ItemAdditionalInfo
   availability: string
   detailUrl: string

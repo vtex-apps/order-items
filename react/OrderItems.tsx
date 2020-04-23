@@ -11,6 +11,7 @@ import { useMutation } from 'react-apollo'
 import UpdateItems from 'vtex.checkout-resources/MutationUpdateItems'
 import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
 import { OrderForm, OrderQueue } from 'vtex.order-manager'
+import { Item } from 'vtex.checkout-graphql'
 
 import {
   LocalOrderTaskType,
@@ -31,7 +32,7 @@ const { useOrderQueue, useQueueStatus, QueueStatus } = OrderQueue
 
 interface Context {
   addItem: (
-    items: Array<Partial<Item>>,
+    items: Array<Partial<CatalogItem>>,
     marketingData?: Partial<MarketingData>
   ) => void
   updateQuantity: (props: Partial<Item>) => void
@@ -201,7 +202,7 @@ const useAddItemsTask = (
           })
 
           // update the `uniqueId` in the remaining items on local orderForm
-          setOrderForm((prevOrderForm: OrderForm) => {
+          setOrderForm(prevOrderForm => {
             return {
               ...prevOrderForm,
               items: prevOrderForm.items.map(item => {
@@ -323,7 +324,10 @@ export const OrderItemsProvider: FC = ({ children }) => {
    * Returns if the items were added or not.
    */
   const addItem = useCallback(
-    (items: Array<Partial<Item>>, marketingData?: Partial<MarketingData>) => {
+    (
+      items: Array<Partial<CatalogItem>>,
+      marketingData?: Partial<MarketingData>
+    ) => {
       const mutationInputItems = items.map(adjustForItemInput)
 
       const orderFormItems = mutationInputItems
@@ -342,12 +346,12 @@ export const OrderItemsProvider: FC = ({ children }) => {
         return false
       }
 
-      setOrderForm((prevOrderForm: OrderForm) => ({
+      setOrderForm(prevOrderForm => ({
         ...prevOrderForm,
         items: [...orderFormItemsRef.current, ...orderFormItems],
         totalizers: orderFormItems.reduce(
           addToTotalizers,
-          prevOrderForm.totalizers ?? []
+          (prevOrderForm.totalizers as Totalizer[]) ?? []
         ),
         marketingData: marketingData ?? prevOrderForm.marketingData,
         value:
@@ -408,7 +412,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
 
       const quantity = input.quantity ?? 1
 
-      setOrderForm((prevOrderForm: OrderForm) => {
+      setOrderForm(prevOrderForm => {
         const updatedItems = prevOrderForm.items.slice()
 
         const oldItem = updatedItems[index]
@@ -426,7 +430,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
         return {
           ...prevOrderForm,
           ...updateTotalizersAndValue({
-            totalizers: prevOrderForm.totalizers,
+            totalizers: prevOrderForm.totalizers as Totalizer[],
             currentValue: prevOrderForm.value,
             newItem,
             oldItem,

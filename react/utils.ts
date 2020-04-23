@@ -1,8 +1,11 @@
 import * as uuid from 'uuid'
+import { Item } from 'vtex.checkout-graphql'
 
 export const AVAILABLE = 'available'
 
-export const adjustForItemInput = (item: Partial<Item>): OrderFormItemInput => {
+export const adjustForItemInput = (
+  item: Partial<CatalogItem>
+): OrderFormItemInput => {
   return {
     id: +(item.id ?? 0),
     index: item.index,
@@ -14,7 +17,7 @@ export const adjustForItemInput = (item: Partial<Item>): OrderFormItemInput => {
 
 export const mapItemInputToOrderFormItem = (
   itemInput: OrderFormItemInput,
-  cartItem: Partial<Item>
+  cartItem: Partial<CatalogItem>
 ): Item => {
   return {
     id: cartItem.id!,
@@ -22,14 +25,16 @@ export const mapItemInputToOrderFormItem = (
     name: cartItem.name!,
     skuName: cartItem.skuName!,
     skuSpecifications: cartItem.skuSpecifications!,
-    imageUrl: cartItem.imageUrl!,
+    imageUrls: {
+      at1x: cartItem.imageUrl!,
+      at2x: cartItem.imageUrl!,
+      at3x: cartItem.imageUrl!,
+    },
     price: cartItem.price!,
     listPrice: cartItem.listPrice!,
     sellingPrice: cartItem.sellingPrice!,
     measurementUnit: cartItem.measurementUnit!,
     quantity: itemInput.quantity ?? 1,
-    index: cartItem.index,
-    seller: itemInput.seller!,
     uniqueId: ('uniqueId' in itemInput && itemInput.uniqueId) || uuid.v4(),
     detailUrl: cartItem.detailUrl!,
     availability: cartItem.availability ?? AVAILABLE,

@@ -1,3 +1,5 @@
+import { Item } from 'vtex.checkout-graphql'
+
 export enum LocalOrderTaskType {
   ADD_MUTATION = 'add_mutation',
   UPDATE_MUTATION = 'update_mutation',
