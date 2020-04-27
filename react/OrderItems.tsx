@@ -126,16 +126,19 @@ const OrderItemsContext = createContext<Context>({
   removeItem: noop,
 })
 
+interface Task {
+  execute: () => Promise<OrderForm>
+  rollback: () => void
+}
+
 const useEnqueueTask = () => {
   const { enqueue, listen } = useOrderQueue()
   const queueStatusRef = useQueueStatus(listen)
   const { setOrderForm } = useOrderForm()
 
-  const enqueueTask = useCallback<
-    (task: () => Promise<OrderForm>) => PromiseLike<void>
-  >(
+  const enqueueTask = useCallback<(task: Task) => PromiseLike<void>>(
     task =>
-      enqueue(task).then(
+      enqueue(task.execute).then(
         (orderForm: OrderForm) => {
           popLocalOrderQueue()
           if (queueStatusRef.current === QueueStatus.FULFILLED) {
@@ -144,9 +147,13 @@ const useEnqueueTask = () => {
         },
         (error: any) => {
           popLocalOrderQueue()
-          if (!error || error.code !== 'TASK_CANCELLED') {
-            throw error
+
+          if (error && error.code === 'TASK_CANCELLED') {
+            return
           }
+
+          task.rollback()
+          throw error
         }
       ),
     [enqueue, queueStatusRef, setOrderForm]
@@ -173,65 +180,76 @@ const useAddItemsTask = (
       mutationInputItems: OrderFormItemInput[]
       mutationInputMarketingData?: Partial<MarketingData>
       orderFormItems: Item[]
-    }) => () => {
-      return mutateAddItem({
-        variables: {
-          items: mutationInputItems,
-          marketingData: mutationInputMarketingData,
-        },
-      })
-        .then(({ data }) => data!.addToCart)
-        .then(updatedOrderForm => {
-          // update the uniqueId of the items that were
-          // added locally with the value from the server
-          orderFormItems.forEach(orderFormItem => {
-            const updatedItem = updatedOrderForm.items.find(
-              updatedOrderFormItem =>
-                updatedOrderFormItem.id === orderFormItem.id
-            )!
-
-            const fakeUniqueId = orderFormItem.uniqueId
-
-            // update all mutations in the queue that referenced
-            // this item with it's fake `uniqueId`
-            updateLocalQueueItemIds({
-              fakeUniqueId,
-              uniqueId: updatedItem.uniqueId,
-            })
-            fakeUniqueIdMapRef.current[fakeUniqueId] = updatedItem.uniqueId
-          })
-
-          // update the `uniqueId` in the remaining items on local orderForm
-          setOrderForm(prevOrderForm => {
-            return {
-              ...prevOrderForm,
-              items: prevOrderForm.items.map(item => {
-                const inputIndex = mutationInputItems.findIndex(
-                  inputItem => inputItem.id === +item.id
-                )
-
-                if (inputIndex === -1) {
-                  // this item wasn't part of the initial mutation, skip it
-                  return item
-                }
-
-                const updatedItem = updatedOrderForm.items.find(
-                  updatedOrderFormItem => updatedOrderFormItem.id === item.id
-                )!
-
-                return {
-                  ...item,
-                  uniqueId: updatedItem.uniqueId,
-                }
-              }),
-              marketingData:
-                mutationInputMarketingData ?? prevOrderForm.marketingData,
-            }
-          })
-
-          return updatedOrderForm
+    }) => ({
+      execute: async () => {
+        const { data } = await mutateAddItem({
+          variables: {
+            items: mutationInputItems,
+            marketingData: mutationInputMarketingData,
+          },
         })
-    },
+
+        const updatedOrderForm = data!.addToCart
+        // update the uniqueId of the items that were
+        // added locally with the value from the server
+        orderFormItems.forEach(orderFormItem => {
+          const updatedItem = updatedOrderForm.items.find(
+            updatedOrderFormItem => updatedOrderFormItem.id === orderFormItem.id
+          )!
+
+          const fakeUniqueId = orderFormItem.uniqueId
+
+          // update all mutations in the queue that referenced
+          // this item with it's fake `uniqueId`
+          updateLocalQueueItemIds({
+            fakeUniqueId,
+            uniqueId: updatedItem.uniqueId,
+          })
+          fakeUniqueIdMapRef.current[fakeUniqueId] = updatedItem.uniqueId
+        })
+
+        // update the `uniqueId` in the remaining items on local orderForm
+        setOrderForm(prevOrderForm => {
+          return {
+            ...prevOrderForm,
+            items: prevOrderForm.items.map(item => {
+              const inputIndex = mutationInputItems.findIndex(
+                inputItem => inputItem.id === +item.id
+              )
+
+              if (inputIndex === -1) {
+                // this item wasn't part of the initial mutation, skip it
+                return item
+              }
+
+              const updatedItem = updatedOrderForm.items.find(
+                updatedOrderFormItem => updatedOrderFormItem.id === item.id
+              )!
+
+              return {
+                ...item,
+                uniqueId: updatedItem.uniqueId,
+              }
+            }),
+            marketingData:
+              mutationInputMarketingData ?? prevOrderForm.marketingData,
+          }
+        })
+
+        return updatedOrderForm
+      },
+      rollback: () => {
+        setOrderForm(prevOrderForm => {
+          const itemIds = mutationInputItems.map(({ id }) => id!.toString())
+          return {
+            ...prevOrderForm,
+            items: prevOrderForm.items.filter(orderFormItem => {
+              return !itemIds.includes(orderFormItem.id)
+            }),
+          }
+        })
+      },
+    }),
     [fakeUniqueIdMapRef, mutateAddItem, setOrderForm]
   )
 
@@ -244,32 +262,37 @@ const useUpdateItemsTask = (
   const [mutateUpdateQuantity] = useMutation<UpdateItemsMutation>(UpdateItems)
 
   const updateItemTask = useCallback(
-    ({ items }: { items: UpdateQuantityInput[] }) => () => {
-      const mutationVariables = {
-        orderItems: items.map(input => {
-          if ('uniqueId' in input) {
-            // here we need to update the uniqueId again in the mutation
-            // because it may have been a "fake" `uniqueId` that were generated
-            // locally so we could manage the items when offline.
-            //
-            // so, we will read the value using the `fakeUniqueIdMapRef` because
-            // it maps a fake `uniqueId` to a real `uniqueId` that was generated by
-            // the API. if it doesn't contain the value, we will assume that this uniqueId
-            // is a real one.
-            const uniqueId =
-              fakeUniqueIdMapRef.current[input.uniqueId] || input.uniqueId
+    ({ items }: { items: UpdateQuantityInput[] }) => ({
+      execute: async () => {
+        const mutationVariables = {
+          orderItems: items.map(input => {
+            if ('uniqueId' in input) {
+              // here we need to update the uniqueId again in the mutation
+              // because it may have been a "fake" `uniqueId` that were generated
+              // locally so we could manage the items when offline.
+              //
+              // so, we will read the value using the `fakeUniqueIdMapRef` because
+              // it maps a fake `uniqueId` to a real `uniqueId` that was generated by
+              // the API. if it doesn't contain the value, we will assume that this uniqueId
+              // is a real one.
+              const uniqueId =
+                fakeUniqueIdMapRef.current[input.uniqueId] || input.uniqueId
 
-            return { uniqueId, quantity: input.quantity }
-          }
+              return { uniqueId, quantity: input.quantity }
+            }
 
-          return input
-        }),
-      }
+            return input
+          }),
+        }
 
-      return mutateUpdateQuantity({
-        variables: mutationVariables,
-      }).then(({ data }) => data!.updateItems)
-    },
+        const { data } = await mutateUpdateQuantity({
+          variables: mutationVariables,
+        })
+
+        return data!.updateItems
+      },
+      rollback: () => {},
+    }),
     [fakeUniqueIdMapRef, mutateUpdateQuantity]
   )
 
