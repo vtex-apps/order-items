@@ -6,15 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- Marketing data being `undefined` when `addItem` was called without the second argument.
 
 ## [0.7.0] - 2020-03-06
-
 ### Added
-
 - Support for `marketingData` argument to be received by `addToCart`.
 
 ## [0.6.0] - 2020-02-20
-
 ### Added
 - `addItem` function to `OrderItemsContext`.
 
@@ -23,84 +22,57 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Order form is now cached in `localStorage`.
 
 ## [0.5.2] - 2020-02-19
-
 ### Changed
-
 - Use the separate `default export`s from `vtex.checkout-resources`.
 
 ## [0.5.1] - 2019-11-25
-
 ### Changed
-
 - Treats case when OrderManager fails to fetch order form and provides a better error message when that happens.
 
 ## [0.5.0] - 2019-11-06
-
 ### Changed
-
 - Enqueued `updateItem` mutations are now merged together to prevent the task queue from growing too much.
 
 ## [0.4.4] - 2019-10-10
-
 ### Changed
-
 - API methods are not debounced anymore.
 
 ## [0.4.3] - 2019-10-10
-
 ### Fixed
-
  Optimistic calculation of totalizers when some kinds of discounts are applied.
 
 ## [0.4.2] - 2019-10-04
-
 ### Changed
-
 - Small code refactor.
 
 ## [0.4.1] - 2019-09-16
-
 ### Fixed
-
 - Optimistic calculation of the totalizers doesn't consider unavailable items anymore.
 
 ## [0.4.0] - 2019-09-13
-
 ### Changed
-
 - `updateItem` function has been split into `updateQuantity` and `removeItem`, and both functions are debounced.
 
 ## [0.3.1] - 2019-09-10
-
 ### Changed
-
 - Moved `README.md` to `/docs` folder to comply with VTEX IO docs format.
 
 ## [0.3.0] - 2019-09-05
-
 ### Changed
-
 - `updateItem` now receives an `Partial<Item>` object as argument.
 
 ## [0.2.1] - 2019-09-05
-
 ### Changed
-
 - GraphQL mutation is now imported from `checkout-resources`.
 
 ## [0.2.0] - 2019-08-29
-
 ### Changed
-
 - List of items is now retrieved from `OrderManager`.
 - `updateItem` optimistically updates Subtotal and Total values in order form.
 
 ### Removed
-
 - `itemList` from the API.
 
 ## [0.1.0] - 2019-08-23
-
 ### Added
-
 - Initial implementation of `OrderItemsProvider` and `useOrderItems`, which returns `itemsList` and `updateItem`.
