@@ -223,7 +223,8 @@ const useAddItemsTask = (
                   uniqueId: updatedItem.uniqueId,
                 }
               }),
-              marketingData: mutationInputMarketingData,
+              marketingData:
+                mutationInputMarketingData ?? prevOrderForm.marketingData,
             }
           })
 
