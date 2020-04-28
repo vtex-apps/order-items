@@ -351,7 +351,14 @@ export const OrderItemsProvider: FC = ({ children }) => {
       items: Array<Partial<CatalogItem>>,
       marketingData?: Partial<MarketingData>
     ) => {
-      const mutationInputItems = items.map(adjustForItemInput)
+      const mutationInputItems = items
+        .map(adjustForItemInput)
+        .filter(
+          itemInput =>
+            orderFormItemsRef.current.findIndex(
+              orderFormItem => itemInput.id!.toString() === orderFormItem.id
+            ) === -1
+        )
 
       const orderFormItems = mutationInputItems
         .map((itemInput, index) =>
