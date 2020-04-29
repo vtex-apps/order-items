@@ -26,6 +26,7 @@ type LocalOrderTask =
     }
   | {
       variables: UpdateQuantityMutationVariables
+      orderFormItems: Item[]
       type: LocalOrderTaskType.UPDATE_MUTATION
     }
 

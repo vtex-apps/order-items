@@ -42,3 +42,7 @@ export const mapItemInputToOrderFormItem = (
     options: cartItem.options,
   }
 }
+
+export const filterUndefined = <T>(value: T | undefined): value is T => {
+  return value !== undefined
+}
