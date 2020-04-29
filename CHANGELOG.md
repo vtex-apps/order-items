@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Fixed
-- Items not removed when add or update mutation returns an error.
+- Items not updated to previous state when either add or update mutations returned an error.
 
 ## [0.7.1] - 2020-04-27
 ### Fixed
