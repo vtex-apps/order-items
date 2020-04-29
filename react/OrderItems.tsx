@@ -64,11 +64,12 @@ const updateTotalizersAndValue = ({
   const oldItemSellingPrice = oldItem.sellingPrice ?? 0
 
   const oldPrice = oldItemPrice * oldItemQuantity
-  const newPrice = newItem.price * newItem.quantity
+  const newPrice = newItem.price! * newItem.quantity
   const subtotalDifference = newPrice - oldPrice
 
   const oldDiscount = (oldItemSellingPrice - oldItemPrice) * oldItemQuantity
-  const newDiscount = (newItem.sellingPrice - newItem.price) * newItem.quantity
+  const newDiscount =
+    (newItem.sellingPrice! - newItem.price!) * newItem.quantity
   const discountDifference = newDiscount - oldDiscount
 
   const updatedValue = currentValue + subtotalDifference + discountDifference
@@ -387,7 +388,7 @@ export const OrderItemsProvider: FC = ({ children }) => {
         value:
           prevOrderForm.value +
           orderFormItems.reduce(
-            (total, item) => total + item.sellingPrice * item.quantity,
+            (total, item) => total + item.sellingPrice! * item.quantity,
             0
           ),
       }))
