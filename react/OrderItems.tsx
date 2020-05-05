@@ -154,7 +154,6 @@ const useEnqueueTask = () => {
             return
           }
 
-          task.rollback?.()
           throw error
         }
       ),
