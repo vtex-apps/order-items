@@ -1,6 +1,6 @@
 import React, { createContext, FC, useContext, useMemo, useState } from 'react'
 
-import { mockOrderForm } from '../mockOrderForm'
+import { mockOrderForm } from '../../__fixtures__/mockOrderForm'
 
 interface Context {
   loading: boolean

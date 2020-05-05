@@ -2,12 +2,15 @@ import { adjust } from 'ramda'
 import React, { FunctionComponent } from 'react'
 import { MockedProvider } from '@apollo/react-testing'
 import { act, render, fireEvent } from '@vtex/test-tools/react'
+import { Item } from 'vtex.checkout-graphql'
 import UpdateItem from 'vtex.checkout-resources/MutationUpdateItems'
-import { OrderFormProvider, useOrderForm } from 'vtex.order-manager/OrderForm'
-import { OrderQueueProvider } from 'vtex.order-manager/OrderQueue'
+import { OrderForm, OrderQueue } from 'vtex.order-manager'
 
-import { mockOrderForm } from '../__mocks__/mockOrderForm'
+import { mockOrderForm } from '../__fixtures__/mockOrderForm'
 import { OrderItemsProvider, useOrderItems } from '../OrderItems'
+
+const { OrderFormProvider, useOrderForm } = OrderForm
+const { OrderQueueProvider } = OrderQueue
 
 const mockUpdateItemMutation = (
   args: Array<Partial<Item>>,
@@ -39,7 +42,7 @@ describe('OrderItems', () => {
       return (
         <div>
           {items.map((item: Item) => (
-            <div key={item.name}>
+            <div key={item.name!}>
               {item.name}: {item.quantity}
             </div>
           ))}
@@ -96,7 +99,7 @@ describe('OrderItems', () => {
       return (
         <div>
           {items.map((item: Item) => (
-            <div key={item.name}>
+            <div key={item.name!}>
               {item.name}: {item.quantity}
             </div>
           ))}
