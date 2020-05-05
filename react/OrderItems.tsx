@@ -36,8 +36,8 @@ interface Context {
     items: Array<Partial<CatalogItem>>,
     marketingData?: Partial<MarketingData>
   ) => void
-  updateQuantity: (props: Partial<Item>) => void
-  removeItem: (props: Partial<Item>) => void
+  updateQuantity: (props: Partial<CatalogItem>) => void
+  removeItem: (props: Partial<CatalogItem>) => void
 }
 
 enum Totalizers {
