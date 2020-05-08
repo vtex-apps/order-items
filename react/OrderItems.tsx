@@ -60,17 +60,17 @@ const updateTotalizersAndValue = ({
     return { totalizers, value: currentValue }
   }
 
-  const oldItemPrice = oldItem.price ?? 0
+  const oldItemPrice = (oldItem.price ?? 0) * (oldItem.unitMultiplier ?? 1)
   const oldItemQuantity = oldItem.quantity ?? 0
   const oldItemSellingPrice = oldItem.sellingPrice ?? 0
 
   const oldPrice = oldItemPrice * oldItemQuantity
-  const newPrice = newItem.price! * newItem.quantity
+  const newItemPrice = newItem.price! * (newItem.unitMultiplier ?? 1)
+  const newPrice = newItemPrice * newItem.quantity
   const subtotalDifference = newPrice - oldPrice
 
   const oldDiscount = (oldItemSellingPrice - oldItemPrice) * oldItemQuantity
-  const newDiscount =
-    (newItem.sellingPrice! - newItem.price!) * newItem.quantity
+  const newDiscount = (newItem.sellingPrice! - newItemPrice) * newItem.quantity
   const discountDifference = newDiscount - oldDiscount
 
   const updatedValue = currentValue + subtotalDifference + discountDifference
