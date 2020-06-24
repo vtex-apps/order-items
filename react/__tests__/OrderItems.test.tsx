@@ -1,12 +1,13 @@
 import { adjust } from 'ramda'
 import React, { FunctionComponent } from 'react'
-import { MockedProvider } from '@apollo/react-testing'
-import { act, render, fireEvent } from '@vtex/test-tools/react'
+import { MockedProvider, MockedResponse } from '@apollo/react-testing'
+import { act, render, fireEvent, wait } from '@vtex/test-tools/react'
 import { Item } from 'vtex.checkout-graphql'
 import UpdateItem from 'vtex.checkout-resources/MutationUpdateItems'
+import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
 import { OrderForm, OrderQueue } from 'vtex.order-manager'
 
-import { mockOrderForm } from '../__fixtures__/mockOrderForm'
+import { mockOrderForm, mockCatalogItem } from '../__fixtures__/mockOrderForm'
 import { OrderItemsProvider, useOrderItems } from '../OrderItems'
 
 const { OrderFormProvider, useOrderForm } = OrderForm
@@ -42,7 +43,7 @@ describe('OrderItems', () => {
       return (
         <div>
           {items.map((item: Item) => (
-            <div key={item.name!}>
+            <div key={item.id}>
               {item.name}: {item.quantity}
             </div>
           ))}
@@ -99,7 +100,7 @@ describe('OrderItems', () => {
       return (
         <div>
           {items.map((item: Item) => (
-            <div key={item.name!}>
+            <div key={item.id}>
               {item.name}: {item.quantity}
             </div>
           ))}
@@ -138,7 +139,7 @@ describe('OrderItems', () => {
     })
     expect(
       queryByText(
-        (_, element) =>
+        (_: unknown, element: any) =>
           !!element.textContent &&
           element.textContent.includes(mockOrderForm.items[0].name)
       )
@@ -148,5 +149,88 @@ describe('OrderItems', () => {
       () => new Promise<void>(resolve => setTimeout(() => resolve()))
     ) // waits for actual mutation result
     expect(getByText(`${mockOrderForm.items[0].name}: 7`)).toBeTruthy()
+  })
+
+  it("should remove the items that weren't successfully added", async () => {
+    jest.useFakeTimers()
+
+    const mockUnavailableItem: MockedResponse = {
+      request: {
+        query: AddToCart,
+        variables: {
+          items: [
+            {
+              id: +mockCatalogItem.id,
+              quantity: 1,
+              seller: mockCatalogItem.seller,
+            },
+          ],
+        },
+      },
+      result: {
+        data: {
+          addToCart: {
+            items: [],
+            messages: {
+              generalMessages: [
+                {
+                  code: 'withoutStock',
+                  text:
+                    'O item Macacao Pantalona Xo Uruca Preto - PP não tem estoque',
+                  status: 'error',
+                },
+              ],
+            },
+          },
+        },
+      },
+    }
+
+    const Component: FunctionComponent = () => {
+      const {
+        orderForm: { items },
+      } = useOrderForm()
+      const { addItem } = useOrderItems()
+      return (
+        <div>
+          {items.map((item: Item) => (
+            <div key={item.id}>{item.name}</div>
+          ))}
+          <button onClick={() => addItem([mockCatalogItem])}>
+            add to cart
+          </button>
+        </div>
+      )
+    }
+
+    const { getByText, queryByText } = render(
+      <MockedProvider mocks={[mockUnavailableItem]} addTypename={false}>
+        <OrderQueueProvider>
+          <OrderFormProvider>
+            <OrderItemsProvider>
+              <Component />
+            </OrderItemsProvider>
+          </OrderFormProvider>
+        </OrderQueueProvider>
+      </MockedProvider>
+    )
+
+    const addToCartButton = getByText(/add to cart/i)
+
+    fireEvent.click(addToCartButton)
+
+    // the item is added for a brief moment
+    await wait(() =>
+      expect(queryByText('Macacao Pantalona Xo Uruca')).toBeInTheDocument()
+    )
+
+    act(() => {
+      jest.runAllTimers()
+    })
+
+    // then it is removed
+    await wait(() =>
+      expect(queryByText('Macacao Pantalona Xo Uruca')).not.toBeInTheDocument()
+    )
   })
 })
