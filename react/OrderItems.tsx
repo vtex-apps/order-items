@@ -196,7 +196,14 @@ const useAddItemsTask = (
         orderFormItems.forEach(orderFormItem => {
           const updatedItem = updatedOrderForm.items.find(
             updatedOrderFormItem => updatedOrderFormItem.id === orderFormItem.id
-          )!
+          )
+
+          if (!updatedItem) {
+            // the item wasn't added to the cart. the reason for this
+            // may vary, but could be something like the item doesn't
+            // have stock left, etc.
+            return
+          }
 
           const fakeUniqueId = orderFormItem.uniqueId
 
@@ -213,25 +220,32 @@ const useAddItemsTask = (
         setOrderForm(prevOrderForm => {
           return {
             ...prevOrderForm,
-            items: prevOrderForm.items.map(item => {
-              const inputIndex = mutationInputItems.findIndex(
-                inputItem => inputItem.id === +item.id
-              )
+            items: prevOrderForm.items
+              .map(item => {
+                const inputIndex = mutationInputItems.findIndex(
+                  inputItem => inputItem.id === +item.id
+                )
 
-              if (inputIndex === -1) {
-                // this item wasn't part of the initial mutation, skip it
-                return item
-              }
+                if (inputIndex === -1) {
+                  // this item wasn't part of the initial mutation, skip it
+                  return item
+                }
 
-              const updatedItem = updatedOrderForm.items.find(
-                updatedOrderFormItem => updatedOrderFormItem.id === item.id
-              )!
+                const updatedItem = updatedOrderForm.items.find(
+                  updatedOrderFormItem => updatedOrderFormItem.id === item.id
+                )
 
-              return {
-                ...item,
-                uniqueId: updatedItem.uniqueId,
-              }
-            }),
+                if (!updatedItem) {
+                  // item was not added to the cart
+                  return null
+                }
+
+                return {
+                  ...item,
+                  uniqueId: updatedItem.uniqueId,
+                }
+              })
+              .filter((item): item is Item => item != null),
             marketingData:
               mutationInputMarketingData ?? prevOrderForm.marketingData,
           }

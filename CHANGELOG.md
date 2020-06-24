@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- Error on the add to cart function if one of the items wasn't successfully added to the cart.
 
 ## [0.7.5] - 2020-05-08
 ### Fixed
