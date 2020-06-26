@@ -74,3 +74,25 @@ export const mockOrderForm = Object.freeze({
   ],
   value: 9585000,
 })
+
+export const mockCatalogItem: CatalogItem = {
+  id: '140133',
+  productId: '256019',
+  availability: 'AVAILABLE',
+  quantity: 1,
+  uniqueId: '',
+  detailUrl: '/macacao-pantalona-xo-uruca-preto-266569-0013-256019/p',
+  name: 'Macacao Pantalona Xo Uruca',
+  additionalInfo: {
+    brandName: 'Farm',
+  },
+  seller: 'lojafarm',
+  skuName: 'Preto - PP',
+  price: 69800,
+  listPrice: 69800,
+  sellingPrice: 69800,
+  measurementUnit: 'un',
+  skuSpecifications: [],
+  imageUrl:
+    'https://lojafarm.vtexassets.com/arquivos/ids/1930594-55-55/266569_0013_1-MACACAO-PANTALONA-XO-URUCA.jpg',
+}
