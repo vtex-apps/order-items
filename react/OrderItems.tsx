@@ -437,9 +437,12 @@ export const OrderItemsProvider: FC = ({ children }) => {
         )
 
       const orderFormItems = mutationInputItems
-        .map((itemInput, index) =>
-          mapItemInputToOrderFormItem(itemInput, items[index])
-        )
+        .map(itemInput => {
+          const index = items.findIndex(
+            item => item.id === itemInput.id?.toString()
+          )
+          return mapItemInputToOrderFormItem(itemInput, items[index])
+        })
         .filter(
           orderFormItem =>
             orderFormItemsRef.current.findIndex(
