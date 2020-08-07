@@ -96,3 +96,97 @@ export const mockCatalogItem: CatalogItem = {
   imageUrl:
     'https://lojafarm.vtexassets.com/arquivos/ids/1930594-55-55/266569_0013_1-MACACAO-PANTALONA-XO-URUCA.jpg',
 }
+
+export const mockCatalogItems: CatalogItem[] = [
+  {
+    id: '2000536',
+    availability: 'AVAILABLE',
+    additionalInfo: {
+      brandName: 'Samsung',
+    },
+    productId: '2000004',
+    quantity: 1,
+    uniqueId: '',
+    detailUrl: '/st-tropez-shorts/p',
+    name: 'St Tropez Top Shorts',
+    seller: '1',
+    skuName: 'Navy Blue',
+    price: 303000,
+    listPrice: 303000,
+    sellingPrice: 303000,
+    measurementUnit: 'un',
+    skuSpecifications: [],
+    imageUrl:
+      'https://storecomponents.vtexassets.com/arquivos/ids/155488-500-auto?width=500&height=auto&aspect=true',
+    options: [],
+  },
+  {
+    id: '2000543',
+    additionalInfo: {
+      brandName: 'Make B.',
+    },
+    availability: 'AVAILABLE',
+    productId: '2000008',
+    quantity: 1,
+    uniqueId: '',
+    detailUrl: '/blouse-with-knot/p',
+    name: 'Blouse with Knot',
+    seller: '1',
+    skuName: 'Grey',
+    price: 12800,
+    listPrice: 12800,
+    sellingPrice: 12800,
+    measurementUnit: 'un',
+    skuSpecifications: [],
+    imageUrl:
+      'https://storecomponents.vtexassets.com/arquivos/ids/155497-500-auto?width=500&height=auto&aspect=true',
+    options: [],
+  },
+]
+
+export const mockCatalogItems2: CatalogItem[] = [
+  {
+    id: '310124169',
+    availability: 'AVAILABLE',
+    additionalInfo: {
+      brandName: 'Samsung',
+    },
+    productId: '2000004',
+    quantity: 1,
+    uniqueId: '',
+    detailUrl: '/st-tropez-shorts/p',
+    name: 'St Tropez Top Shorts',
+    seller: '1',
+    skuName: 'Green',
+    price: 8009.999999999999,
+    listPrice: 8009.999999999999,
+    sellingPrice: 8009.999999999999,
+    measurementUnit: 'un',
+    skuSpecifications: [],
+    imageUrl:
+      'https://storecomponents.vtexassets.com/arquivos/ids/155607/St-Tropez-Top-Shorts---verde.jpg?v=637098724114770000',
+    options: [],
+  },
+  {
+    id: '2000546',
+    additionalInfo: {
+      brandName: 'Make B.',
+    },
+    availability: 'AVAILABLE',
+    productId: '2000008',
+    quantity: 1,
+    uniqueId: '',
+    detailUrl: '/blouse-with-knot/p',
+    name: 'Blouse with Knot',
+    seller: '1',
+    skuName: 'Grey',
+    price: 12800,
+    listPrice: 12800,
+    sellingPrice: 12800,
+    measurementUnit: 'un',
+    skuSpecifications: [],
+    imageUrl:
+      'https://storecomponents.vtexassets.com/arquivos/ids/155497-500-auto?width=500&height=auto&aspect=true',
+    options: [],
+  },
+]

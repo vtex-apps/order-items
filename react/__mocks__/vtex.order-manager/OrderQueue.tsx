@@ -7,10 +7,38 @@ interface Context {
 
 const OrderQueueContext = createContext<Context | undefined>(undefined)
 
+let queue: any[] = []
+
+export const resetQueue = () => {
+  queue = []
+}
+
+const enqueue = jest.fn(f => {
+  return new Promise<any>(resolve => {
+    queue.push([f, resolve])
+  })
+})
+
+export const ensureEmptyQueue = () => {
+  if (queue.length === 0) {
+    return
+  }
+
+  console.error(
+    "Tests ended but the task queue is not empty. Did you forget to call 'runTaskQueue'?"
+  )
+}
+
+export const runQueueTask = (): Promise<void> => {
+  const [f, resolve] = queue.shift()
+
+  return Promise.resolve(f()).then(resolve)
+}
+
 export const OrderQueueProvider: FC = ({ children }: any) => {
   const value = useMemo(
     () => ({
-      enqueue: async (f: any) => f(),
+      enqueue,
       listen: () => () => {},
     }),
     []
