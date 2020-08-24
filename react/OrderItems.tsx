@@ -429,26 +429,27 @@ export const OrderItemsProvider: FC = ({ children }) => {
     ) => {
       const mutationInputItems = items
         .map(adjustForItemInput)
-        .filter(
-          itemInput =>
-            orderFormItemsRef.current.findIndex(
-              orderFormItem => itemInput.id!.toString() === orderFormItem.id
-            ) === -1
-        )
-
-      const orderFormItems = mutationInputItems
         .map(itemInput => {
-          const index = items.findIndex(
-            item => item.id === itemInput.id?.toString()
+          const existingItem = orderFormItemsRef.current.find(
+            (item: Item) => itemInput.id?.toString() === item.id
           )
-          return mapItemInputToOrderFormItem(itemInput, items[index])
+
+          if (existingItem == null) {
+            return itemInput
+          }
+
+          return {
+            ...itemInput,
+            quantity: (itemInput.quantity ?? 1) + existingItem.quantity,
+          }
         })
-        .filter(
-          orderFormItem =>
-            orderFormItemsRef.current.findIndex(
-              (item: any) => item.id === orderFormItem.id
-            ) === -1
+
+      const orderFormItems = mutationInputItems.map(itemInput => {
+        const index = items.findIndex(
+          item => item.id === itemInput.id?.toString()
         )
+        return mapItemInputToOrderFormItem(itemInput, items[index])
+      })
 
       if (orderFormItems.length === 0) {
         // all items already exist in the cart
