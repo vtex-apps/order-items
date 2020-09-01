@@ -1,13 +1,14 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import * as uuid from 'uuid'
 import { Item } from 'vtex.checkout-graphql'
 
 export const AVAILABLE = 'available'
 
-export const adjustForItemInput = (
+export const mapForItemInput = (
   item: Partial<CatalogItem>
 ): OrderFormItemInput => {
   return {
-    id: +(item.id ?? 0),
+    id: +item.id!,
     index: item.index,
     quantity: item.quantity,
     seller: item.seller,
@@ -16,30 +17,29 @@ export const adjustForItemInput = (
 }
 
 export const mapItemInputToOrderFormItem = (
-  itemInput: OrderFormItemInput,
-  cartItem: Partial<CatalogItem>
+  item: Partial<CatalogItem>
 ): Item => {
   return {
-    id: cartItem.id!,
-    productId: cartItem.productId!,
-    name: cartItem.name!,
-    skuName: cartItem.skuName!,
-    skuSpecifications: cartItem.skuSpecifications!,
+    id: item.id!,
+    productId: item.productId!,
+    name: item.name!,
+    skuName: item.skuName!,
+    skuSpecifications: item.skuSpecifications!,
     imageUrls: {
-      at1x: cartItem.imageUrl!,
-      at2x: cartItem.imageUrl!,
-      at3x: cartItem.imageUrl!,
+      at1x: item.imageUrl!,
+      at2x: item.imageUrl!,
+      at3x: item.imageUrl!,
     },
-    price: cartItem.price!,
-    listPrice: cartItem.listPrice!,
-    sellingPrice: cartItem.sellingPrice!,
-    measurementUnit: cartItem.measurementUnit!,
-    quantity: itemInput.quantity ?? 1,
-    uniqueId: ('uniqueId' in itemInput && itemInput.uniqueId) || uuid.v4(),
-    detailUrl: cartItem.detailUrl!,
-    availability: cartItem.availability ?? AVAILABLE,
-    additionalInfo: cartItem.additionalInfo!,
-    options: cartItem.options,
+    price: item.price!,
+    listPrice: item.listPrice!,
+    sellingPrice: item.sellingPrice!,
+    measurementUnit: item.measurementUnit!,
+    quantity: item.quantity ?? 1,
+    uniqueId: item?.uniqueId ?? uuid.v4(),
+    detailUrl: item.detailUrl!,
+    availability: item.availability ?? AVAILABLE,
+    additionalInfo: item.additionalInfo!,
+    options: item.options,
   }
 }
 
