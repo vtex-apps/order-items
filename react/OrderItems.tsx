@@ -99,27 +99,31 @@ const updateTotalizersAndValue = ({
 }
 
 const findExistingItem = (input: Partial<CatalogItem>, items: Item[]) => {
-  // console.log({ input, items })
   const idSet = new Set(items.map((i) => i.id))
 
   return items.find((item: Item) => {
-    // console.log({ item })
     const isSameId = input.id?.toString() === item.id
-    // todo: const isSameSeller = input.seller === item
+    const isSameSeller = input.seller === item.seller
 
+    // input has no options
     if (input.options == null) {
-      if (input.options !== item.options) {
+      // and the comparing item has, not the same item
+      if (item.options != null) {
         return false
       }
 
-      return isSameId
+      // neither have options, just compare id and seller
+      return isSameId && isSameSeller
     }
 
+    // TODO: maybe support comparing inputValues
+
+    // does every option (assuming assembly option) existing in the cart as separate products?
     const optionsExistInCart = input.options.every((opItem) =>
       idSet.has(opItem.id)
     )
 
-    return isSameId && optionsExistInCart
+    return isSameId && isSameSeller && optionsExistInCart
   })
 }
 
@@ -148,11 +152,8 @@ export const OrderItemsProvider: FC = ({ children }) => {
       items: Array<Partial<CatalogItem>>,
       marketingData?: Partial<MarketingData>
     ) => {
-      // console.log({ items })
       const updatedItems = items.map((item) => {
         const existingItem = findExistingItem(item, orderFormItemsRef.current)
-
-        // console.log({ item, existingItem })
 
         if (existingItem == null) return item
 
@@ -222,12 +223,12 @@ export const OrderItemsProvider: FC = ({ children }) => {
 
       if (input.id) {
         index = currentOrderFormItems.findIndex(
-          (orderItem: any) => orderItem.id === input.id
+          (orderItem) => orderItem.id === input.id
         )
       } else if ('uniqueId' in input) {
         uniqueId = input.uniqueId
         index = currentOrderFormItems.findIndex(
-          (orderItem: any) => orderItem.uniqueId === input.uniqueId
+          (orderItem) => orderItem.uniqueId === input.uniqueId
         )
       } else {
         index = input.index ?? -1
