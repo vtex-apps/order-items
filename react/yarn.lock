@@ -5714,21 +5714,21 @@ verror@1.10.0:
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
 
-"vtex.checkout-graphql@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-graphql@0.34.0/public/@types/vtex.checkout-graphql":
-  version "0.34.0"
-  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-graphql@0.34.0/public/@types/vtex.checkout-graphql#aaed28cb41dfc29dcbae14388e665409daa9a738"
+"vtex.checkout-graphql@https://addadd--storecomponents.myvtex.com/_v/private/typings/linked/v1/vtex.checkout-graphql@0.36.5+build1599072031/public/@types/vtex.checkout-graphql":
+  version "0.36.5"
+  resolved "https://addadd--storecomponents.myvtex.com/_v/private/typings/linked/v1/vtex.checkout-graphql@0.36.5+build1599072031/public/@types/vtex.checkout-graphql#ead218266bafb7ab7a438362ea96267e43fbea8c"
 
-"vtex.checkout-resources@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-resources@0.29.0/public/@types/vtex.checkout-resources":
-  version "0.29.0"
-  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-resources@0.29.0/public/@types/vtex.checkout-resources#586a55ba5f333bc84699a1572639f52209aa77a6"
+"vtex.checkout-resources@https://addadd--storecomponents.myvtex.com/_v/private/typings/linked/v1/vtex.checkout-resources@0.32.0+build1599071456/public/@types/vtex.checkout-resources":
+  version "0.32.0"
+  resolved "https://addadd--storecomponents.myvtex.com/_v/private/typings/linked/v1/vtex.checkout-resources@0.32.0+build1599071456/public/@types/vtex.checkout-resources#179f7e77a2e1fb4ea1fdc0ab148cfb828b8a7c24"
 
-"vtex.order-manager@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.8.4/public/@types/vtex.order-manager":
-  version "0.8.4"
-  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.8.4/public/@types/vtex.order-manager#3a4761c73364853954dd61a61d1d01260cbbf634"
+"vtex.order-manager@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.8.5/public/@types/vtex.order-manager":
+  version "0.8.5"
+  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.8.5/public/@types/vtex.order-manager#1f01414540d02e2ea7e41e73edaf431d407a9985"
 
-"vtex.render-runtime@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.100.4/public/@types/vtex.render-runtime":
-  version "8.100.4"
-  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.100.4/public/@types/vtex.render-runtime#b94c966be2d1c3d8bc9f1caf2dd9f462d88e98d2"
+"vtex.render-runtime@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.112.0/public/@types/vtex.render-runtime":
+  version "8.112.0"
+  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.112.0/public/@types/vtex.render-runtime#d24f7d970497a80e1e38864db09bbe5da61e0696"
 
 w3c-hr-time@^1.0.1:
   version "1.0.2"
