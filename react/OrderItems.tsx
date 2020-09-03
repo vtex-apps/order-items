@@ -127,7 +127,7 @@ const findExistingItem = (input: Partial<CatalogItem>, items: Item[]) => {
   })
 }
 
-export const OrderItemsProvider: FC = ({ children }) => {
+const OrderItemsProvider: FC = ({ children }) => {
   const { orderForm, setOrderForm } = useOrderForm()
 
   const fakeUniqueIdMapRef = useFakeUniqueIdMap()
@@ -332,4 +332,5 @@ export const OrderItemsProvider: FC = ({ children }) => {
   )
 }
 
+export { OrderItemsProvider, useOrderItems }
 export default { OrderItemsProvider, useOrderItems }

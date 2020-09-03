@@ -76,7 +76,9 @@ describe('OrderItems', () => {
       const {
         orderForm: { items },
       } = useOrderForm()
+
       const { updateQuantity } = useOrderItems()
+
       return (
         <div>
           {items.map((item: Item) => (
@@ -123,7 +125,7 @@ describe('OrderItems', () => {
 
     await act(
       () =>
-        new Promise<void>(resolve => {
+        new Promise<void>((resolve) => {
           setTimeout(() => resolve())
         })
     ) // waits for actual mutation result
@@ -135,7 +137,9 @@ describe('OrderItems', () => {
       const {
         orderForm: { items },
       } = useOrderForm()
+
       const { removeItem } = useOrderItems()
+
       return (
         <div>
           {items.map((item: Item) => (
@@ -187,7 +191,7 @@ describe('OrderItems', () => {
     ).toBeFalsy() // optimistic response
 
     await act(
-      () => new Promise<void>(resolve => setTimeout(() => resolve()))
+      () => new Promise<void>((resolve) => setTimeout(() => resolve()))
     ) // waits for actual mutation result
 
     expect(getByText(`${mockOrderForm.items[0].name}: 7`)).toBeTruthy()
@@ -232,7 +236,9 @@ describe('OrderItems', () => {
       const {
         orderForm: { items },
       } = useOrderForm()
+
       const { addItem } = useOrderItems()
+
       return (
         <div>
           {items.map((item: Item) => (
@@ -347,6 +353,7 @@ describe('OrderItems', () => {
       const {
         orderForm: { items },
       } = useOrderForm()
+
       const { addItem } = useOrderItems()
 
       return (
