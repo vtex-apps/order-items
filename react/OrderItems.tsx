@@ -7,11 +7,7 @@ import {
   getLocalOrderQueue,
   pushLocalOrderQueue,
 } from './modules/localOrderQueue'
-import {
-  mapForItemInput,
-  mapItemInputToOrderFormItem,
-  AVAILABLE,
-} from './utils'
+import { adjustForItemInput, mapToOrderFormItem, AVAILABLE } from './utils'
 import { OrderItemsContext, useOrderItems } from './modules/OrderItemsContext'
 import { useEnqueueTask } from './modules/useEnqueueTask'
 import { useAddItemsTask } from './modules/useAddItemsTask'
@@ -155,7 +151,9 @@ const OrderItemsProvider: FC = ({ children }) => {
       const updatedItems = items.map((item) => {
         const existingItem = findExistingItem(item, orderFormItemsRef.current)
 
-        if (existingItem == null) return item
+        if (existingItem == null) {
+          return item
+        }
 
         return {
           ...item,
@@ -164,10 +162,8 @@ const OrderItemsProvider: FC = ({ children }) => {
         }
       })
 
-      const mutationInputItems = updatedItems.map(mapForItemInput)
-      const orderFormItems = updatedItems.map(mapItemInputToOrderFormItem)
-
-      // console.log({ orderFormItems, mutationInputItems })
+      const mutationInputItems = updatedItems.map(adjustForItemInput)
+      const orderFormItems = updatedItems.map(mapToOrderFormItem)
 
       if (orderFormItems.length === 0) {
         return false
