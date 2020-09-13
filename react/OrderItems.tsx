@@ -196,7 +196,9 @@ const useAddItemsTask = (
         orderFormItems.forEach(orderFormItem => {
           const updatedItem = updatedOrderForm.items.find(
             // @ts-ignore
-            updatedOrderFormItem => updatedOrderFormItem.id === orderFormItem.id && updatedOrderFormItem.seller === orderFormItem.seller
+            updatedOrderFormItem =>
+              updatedOrderFormItem.id === orderFormItem.id &&
+              updatedOrderFormItem.seller === orderFormItem.seller
           )
 
           if (!updatedItem) {
@@ -225,7 +227,9 @@ const useAddItemsTask = (
               .map(item => {
                 const inputIndex = mutationInputItems.findIndex(
                   // @ts-ignore
-                  inputItem => inputItem.id === +item.id && inputItem.seller === item.seller
+                  inputItem =>
+                    inputItem.id === +item.id &&
+                    inputItem.seller === item.seller
                 )
 
                 if (inputIndex === -1) {
@@ -235,7 +239,9 @@ const useAddItemsTask = (
 
                 const updatedItem = updatedOrderForm.items.find(
                   // @ts-ignore
-                  updatedOrderFormItem => updatedOrderFormItem.id === item.id && updatedOrderFormItem.seller === item.seller
+                  updatedOrderFormItem =>
+                    updatedOrderFormItem.id === item.id &&
+                    updatedOrderFormItem.seller === item.seller
                 )
 
                 if (!updatedItem) {
@@ -430,19 +436,22 @@ export const OrderItemsProvider: FC = ({ children }) => {
       items: Array<Partial<CatalogItem>>,
       marketingData?: Partial<MarketingData>
     ) => {
-      const mutationInputItems = items
-        .map(adjustForItemInput)
-        .filter(itemInput => 
+      const mutationInputItems = items.map(adjustForItemInput).filter(
+        itemInput =>
           orderFormItemsRef.current.findIndex(
             // @ts-ignore
-            orderFormItem => itemInput.id!.toString() === orderFormItem.id && itemInput.seller === orderFormItem.seller
+            orderFormItem =>
+              itemInput.id!.toString() === orderFormItem.id &&
+              itemInput.seller === orderFormItem.seller
           ) === -1
-        )
+      )
 
       const orderFormItems = mutationInputItems
         .map(itemInput => {
           const index = items.findIndex(
-            item => item.id === itemInput.id?.toString() && item.seller === itemInput.seller
+            item =>
+              item.id === itemInput.id?.toString() &&
+              item.seller === itemInput.seller
           )
           return mapItemInputToOrderFormItem(itemInput, items[index])
         })
@@ -451,7 +460,8 @@ export const OrderItemsProvider: FC = ({ children }) => {
             orderFormItemsRef.current.findIndex(
               (item: any) =>
                 // @ts-ignore
-                item.id === orderFormItem.id && item.seller === orderFormItem.seller
+                item.id === orderFormItem.id &&
+                item.seller === orderFormItem.seller
             ) === -1
         )
 
@@ -512,7 +522,8 @@ export const OrderItemsProvider: FC = ({ children }) => {
 
         if (input.seller) {
           index = currentOrderFormItems.findIndex(
-            (orderItem: any) => orderItem.id === input.id && orderItem.seller === input.seller
+            (orderItem: any) =>
+              orderItem.id === input.id && orderItem.seller === input.seller
           )
         }
       } else if ('uniqueId' in input) {
