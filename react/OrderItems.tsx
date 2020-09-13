@@ -195,9 +195,9 @@ const useAddItemsTask = (
         // added locally with the value from the server
         orderFormItems.forEach(orderFormItem => {
           const updatedItem = updatedOrderForm.items.find(
-            // @ts-ignore
             updatedOrderFormItem =>
               updatedOrderFormItem.id === orderFormItem.id &&
+              // @ts-ignore
               updatedOrderFormItem.seller === orderFormItem.seller
           )
 
@@ -226,9 +226,9 @@ const useAddItemsTask = (
             items: prevOrderForm.items
               .map(item => {
                 const inputIndex = mutationInputItems.findIndex(
-                  // @ts-ignore
                   inputItem =>
                     inputItem.id === +item.id &&
+                    // @ts-ignore
                     inputItem.seller === item.seller
                 )
 
@@ -238,9 +238,9 @@ const useAddItemsTask = (
                 }
 
                 const updatedItem = updatedOrderForm.items.find(
-                  // @ts-ignore
                   updatedOrderFormItem =>
                     updatedOrderFormItem.id === item.id &&
+                    // @ts-ignore
                     updatedOrderFormItem.seller === item.seller
                 )
 
@@ -439,9 +439,9 @@ export const OrderItemsProvider: FC = ({ children }) => {
       const mutationInputItems = items.map(adjustForItemInput).filter(
         itemInput =>
           orderFormItemsRef.current.findIndex(
-            // @ts-ignore
             orderFormItem =>
               itemInput.id!.toString() === orderFormItem.id &&
+              // @ts-ignore
               itemInput.seller === orderFormItem.seller
           ) === -1
       )
@@ -459,8 +459,8 @@ export const OrderItemsProvider: FC = ({ children }) => {
           orderFormItem =>
             orderFormItemsRef.current.findIndex(
               (item: any) =>
-                // @ts-ignore
                 item.id === orderFormItem.id &&
+                // @ts-ignore
                 item.seller === orderFormItem.seller
             ) === -1
         )
