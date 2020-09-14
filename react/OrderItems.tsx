@@ -399,7 +399,10 @@ interface UpdateItemsMutation {
   updateItems: OrderForm
 }
 
-const findExistingItem = (input: Partial<CatalogItem>, items: Item[]) => {
+const findExistingItem = (
+  input: Partial<CatalogItem> | Item,
+  items: Item[]
+) => {
   const idSet = new Set(items.map((i) => i.id))
 
   return items.find((item: Item) => {
@@ -409,7 +412,7 @@ const findExistingItem = (input: Partial<CatalogItem>, items: Item[]) => {
     // input has no options
     if (input.options == null) {
       // and the comparing item has, not the same item
-      if (item.options != null) {
+      if (item.options?.length) {
         return false
       }
 
@@ -470,28 +473,35 @@ const OrderItemsProvider: FC = ({ children }) => {
       const mutationInputItems = updatedItems.map(adjustForItemInput)
       const orderFormItems = updatedItems.map(mapToOrderFormItem)
 
-      if (orderFormItems.length === 0) {
-        return false
-      }
-
-      setOrderForm((prevOrderForm) => ({
-        ...prevOrderForm,
-        items: [...orderFormItemsRef.current, ...orderFormItems],
-        totalizers: orderFormItems.reduce(
-          (totalizers: Totalizer[], item: Item): Totalizer[] => {
-            return updateTotalizersAndValue({ totalizers, newItem: item })
-              .totalizers
-          },
-          (prevOrderForm.totalizers as Totalizer[]) ?? []
-        ),
-        marketingData: marketingData ?? prevOrderForm.marketingData,
-        value:
-          prevOrderForm.value +
-          orderFormItems.reduce(
-            (total, item) => total + item.sellingPrice! * item.quantity,
-            0
+      setOrderForm((prevOrderForm) => {
+        // remove possible duplicate entries
+        // if we just had changed the quantity of an item
+        const newItems = [
+          ...orderFormItemsRef.current.filter(
+            (i) => findExistingItem(i, orderFormItems) == null
           ),
-      }))
+          ...orderFormItems,
+        ]
+
+        return {
+          ...prevOrderForm,
+          items: newItems,
+          totalizers: orderFormItems.reduce(
+            (totalizers: Totalizer[], item: Item): Totalizer[] => {
+              return updateTotalizersAndValue({ totalizers, newItem: item })
+                .totalizers
+            },
+            (prevOrderForm.totalizers as Totalizer[]) ?? []
+          ),
+          marketingData: marketingData ?? prevOrderForm.marketingData,
+          value:
+            prevOrderForm.value +
+            orderFormItems.reduce(
+              (total, item) => total + item.sellingPrice! * item.quantity,
+              0
+            ),
+        }
+      })
 
       pushLocalOrderQueue({
         type: LocalOrderTaskType.ADD_MUTATION,

@@ -38,6 +38,7 @@ export const mapToOrderFormItem = (cartItem: Partial<CatalogItem>): Item => {
     availability: cartItem.availability ?? AVAILABLE,
     additionalInfo: cartItem.additionalInfo!,
     options: cartItem.options,
+    seller: cartItem.seller!,
   }
 }
 
