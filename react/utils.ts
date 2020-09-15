@@ -39,6 +39,10 @@ export const mapToOrderFormItem = (cartItem: Partial<CatalogItem>): Item => {
     additionalInfo: cartItem.additionalInfo!,
     options: cartItem.options,
     seller: cartItem.seller!,
+    attachmentOfferings: [],
+    attachments: [],
+    bundleItems: [],
+    offerings: [],
   }
 }
 

@@ -1,13 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, {
-  createContext,
-  FC,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useEffect,
-} from 'react'
+import React, { FC, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useMutation } from 'react-apollo'
 import UpdateItems from 'vtex.checkout-resources/MutationUpdateItems'
 import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
@@ -32,15 +24,6 @@ import {
 
 const { useOrderForm } = OrderForm
 const { useOrderQueue, useQueueStatus, QueueStatus } = OrderQueue
-
-interface Context {
-  addItem: (
-    items: Array<Partial<CatalogItem>>,
-    marketingData?: Partial<MarketingData>
-  ) => void
-  updateQuantity: (props: Partial<CatalogItem>) => void
-  removeItem: (props: Partial<CatalogItem>) => void
-}
 
 const enum Totalizers {
   SUBTOTAL = 'Items',
@@ -446,85 +429,6 @@ const OrderItemsProvider: FC = ({ children }) => {
     orderFormItemsRef.current = orderForm.items
   }, [orderForm.items])
 
-  /**
-   * Add the items to the order form.
-   *
-   * Returns if the items were added or not.
-   */
-  const addItem = useCallback(
-    (
-      items: Array<Partial<CatalogItem>>,
-      marketingData?: Partial<MarketingData>
-    ) => {
-      const updatedItems = items.map((item) => {
-        const existingItem = findExistingItem(item, orderFormItemsRef.current)
-
-        if (existingItem == null) {
-          return item
-        }
-
-        return {
-          ...item,
-          id: item.id ?? '0',
-          quantity: (item.quantity ?? 1) + existingItem.quantity,
-        }
-      })
-
-      const mutationInputItems = updatedItems.map(adjustForItemInput)
-      const orderFormItems = updatedItems.map(mapToOrderFormItem)
-
-      setOrderForm((prevOrderForm) => {
-        // remove possible duplicate entries
-        // if we just had changed the quantity of an item
-        const newItems = [
-          ...orderFormItemsRef.current.filter(
-            (i) => findExistingItem(i, orderFormItems) == null
-          ),
-          ...orderFormItems,
-        ]
-
-        return {
-          ...prevOrderForm,
-          items: newItems,
-          totalizers: orderFormItems.reduce(
-            (totalizers: Totalizer[], item: Item): Totalizer[] => {
-              return updateTotalizersAndValue({ totalizers, newItem: item })
-                .totalizers
-            },
-            (prevOrderForm.totalizers as Totalizer[]) ?? []
-          ),
-          marketingData: marketingData ?? prevOrderForm.marketingData,
-          value:
-            prevOrderForm.value +
-            orderFormItems.reduce(
-              (total, item) => total + item.sellingPrice! * item.quantity,
-              0
-            ),
-        }
-      })
-
-      pushLocalOrderQueue({
-        type: LocalOrderTaskType.ADD_MUTATION,
-        variables: {
-          items: mutationInputItems,
-          marketingData,
-        },
-        orderFormItems,
-      })
-
-      enqueueTask(
-        addItemsTask({
-          mutationInputItems,
-          mutationInputMarketingData: marketingData,
-          orderFormItems,
-        })
-      )
-
-      return true
-    },
-    [addItemsTask, enqueueTask, setOrderForm]
-  )
-
   const updateQuantity = useCallback(
     (input) => {
       let index: number
@@ -542,7 +446,7 @@ const OrderItemsProvider: FC = ({ children }) => {
           (orderItem) => orderItem.uniqueId === input.uniqueId
         )
       } else {
-        index = input.index ?? -1
+        index = input?.index ?? -1
       }
 
       if (index < 0 || index >= currentOrderFormItems.length) {
@@ -600,6 +504,96 @@ const OrderItemsProvider: FC = ({ children }) => {
       )
     },
     [enqueueTask, setOrderForm, updateItemsTask]
+  )
+
+  /**
+   * Add the items to the order form.
+   *
+   * Returns if the items were added or not.
+   */
+  const addItem = useCallback(
+    (
+      items: Array<Partial<CatalogItem>>,
+      marketingData?: Partial<MarketingData>
+    ) => {
+      const { newItems, updatedItems } = items.reduce(
+        (acc, item) => {
+          const { newItems: newList, updatedItems: updateList } = acc
+          const existingItem = findExistingItem(item, orderFormItemsRef.current)
+
+          if (existingItem == null) {
+            newList.push(item)
+          } else {
+            updateList.push(item)
+          }
+
+          return acc
+        },
+        { newItems: [], updatedItems: [] } as Record<
+          string,
+          Array<Partial<CatalogItem>>
+        >
+      )
+
+      if (updatedItems.length) {
+        updatedItems.forEach((item) => {
+          const existingItem = findExistingItem(item, orderFormItemsRef.current)
+
+          updateQuantity({
+            ...item,
+            quantity: (item.quantity ?? 1) + existingItem!.quantity,
+          })
+        })
+      }
+
+      if (newItems.length === 0) {
+        return
+      }
+
+      const mutationInputItems = newItems.map(adjustForItemInput)
+      const orderFormItems = newItems.map(mapToOrderFormItem)
+
+      setOrderForm((prevOrderForm) => {
+        return {
+          ...prevOrderForm,
+          items: [...orderFormItemsRef.current, ...orderFormItems],
+          totalizers: orderFormItems.reduce(
+            (totalizers: Totalizer[], item: Item): Totalizer[] => {
+              return updateTotalizersAndValue({ totalizers, newItem: item })
+                .totalizers
+            },
+            (prevOrderForm.totalizers as Totalizer[]) ?? []
+          ),
+          marketingData: marketingData ?? prevOrderForm.marketingData,
+          value:
+            prevOrderForm.value +
+            orderFormItems.reduce(
+              (total, item) => total + item.sellingPrice! * item.quantity,
+              0
+            ),
+        }
+      })
+
+      pushLocalOrderQueue({
+        type: LocalOrderTaskType.ADD_MUTATION,
+        variables: {
+          items: mutationInputItems,
+          marketingData,
+        },
+        orderFormItems,
+      })
+
+      enqueueTask(
+        addItemsTask({
+          mutationInputItems,
+          mutationInputMarketingData: marketingData,
+          orderFormItems,
+        })
+      )
+
+      return true
+    },
+    [addItemsTask, enqueueTask, setOrderForm, updateQuantity]
   )
 
   const removeItem = useCallback(
