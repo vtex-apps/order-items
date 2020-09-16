@@ -1,13 +1,15 @@
 import { FunctionComponent } from 'react'
 
 declare global {
-  interface StorefrontFunctionComponent<P = {}> extends FunctionComponent<P> {
-    getSchema?(props: P): object
-    schema?: object
+  interface StorefrontFunctionComponent<P = Record>
+    extends FunctionComponent<P> {
+    getSchema?(props: P): Record
+    schema?: Record
   }
 
-  interface StorefrontComponent<P = {}, S = {}> extends Component<P, S> {
-    getSchema?(props: P): object
-    schema: object
+  interface StorefrontComponent<P = Record, S = Record>
+    extends Component<P, S> {
+    getSchema?(props: P): Record
+    schema: Record
   }
 }
