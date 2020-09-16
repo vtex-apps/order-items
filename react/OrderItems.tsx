@@ -508,15 +508,16 @@ const OrderItemsProvider: FC = ({ children }) => {
 
   /**
    * Add the items to the order form.
-   *
-   * Returns if the items were added or not.
+   * In case of an item already in the cart, it increments its quantity.
    */
   const addItem = useCallback(
     (
       items: Array<Partial<CatalogItem>>,
       marketingData?: Partial<MarketingData>
     ) => {
-      const { newItems, updatedItems } = items.reduce(
+      const { newItems, updatedItems } = items.reduce<
+        Record<string, Array<Partial<CatalogItem>>>
+      >(
         (acc, item) => {
           const { newItems: newList, updatedItems: updateList } = acc
           const existingItem = findExistingItem(item, orderFormItemsRef.current)
@@ -529,10 +530,7 @@ const OrderItemsProvider: FC = ({ children }) => {
 
           return acc
         },
-        { newItems: [], updatedItems: [] } as Record<
-          string,
-          Array<Partial<CatalogItem>>
-        >
+        { newItems: [], updatedItems: [] }
       )
 
       if (updatedItems.length) {
@@ -590,8 +588,6 @@ const OrderItemsProvider: FC = ({ children }) => {
           orderFormItems,
         })
       )
-
-      return true
     },
     [addItemsTask, enqueueTask, setOrderForm, updateQuantity]
   )
