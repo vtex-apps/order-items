@@ -12,6 +12,8 @@ import {
   mockCatalogItem,
   mockCatalogItems,
   mockCatalogItems2,
+  mockItemSeller1,
+  mockItemSeller2,
 } from '../__fixtures__/mockOrderForm'
 import { OrderItemsProvider, useOrderItems } from '../OrderItems'
 
@@ -486,5 +488,114 @@ describe('OrderItems', () => {
     await waitFor(() =>
       expect(queryByText('St Tropez Top Shorts: 2')).toBeInTheDocument()
     )
+  })
+
+  it('should increment the quantity of an item already in the cart with different seller', async () => {
+    jest.useFakeTimers()
+
+    let itemsToAdd: CatalogItem[] = []
+
+    const Component: FunctionComponent = () => {
+      const {
+        orderForm: { items },
+      } = useOrderForm()
+
+      const { addItem } = useOrderItems()
+
+      return (
+        <div>
+          {items.map((item: Item) => (
+            <div key={item.id}>
+              {item.name}: {item.quantity}
+            </div>
+          ))}
+          <button onClick={() => addItem(itemsToAdd)}>add to cart</button>
+        </div>
+      )
+    }
+
+    const mockAddItems = mockAddItemMutation({
+      args: [
+        {
+          id: +mockItemSeller1.id,
+          quantity: 1,
+          seller: '1',
+          options: [],
+        },
+      ],
+      result: [{ ...mockItemSeller1, quantity: 1 }],
+    })
+
+    const mockAddItems2 = mockAddItemMutation({
+      args: [
+        {
+          id: +mockItemSeller2.id,
+          quantity: 1,
+          seller: '2',
+          options: [],
+        },
+      ],
+      result: [{ ...mockItemSeller2, quantity: 1 }],
+    })
+
+    const mockUpdateItem = mockUpdateItemMutation({
+      args: [{ uniqueId: mockCatalogItems[0].uniqueId, quantity: 2 }],
+      result: [{ ...mockCatalogItems[0], quantity: 2 }],
+    })
+
+    const { getByText, queryAllByText, queryByText, debug } = render(
+      <MockedProvider
+        mocks={[mockAddItems, mockAddItems2, mockUpdateItem]}
+        addTypename={false}
+      >
+        <OrderQueueProvider>
+          <OrderFormProvider>
+            <OrderItemsProvider>
+              <Component />
+            </OrderItemsProvider>
+          </OrderFormProvider>
+        </OrderQueueProvider>
+      </MockedProvider>
+    )
+
+    itemsToAdd = [mockItemSeller1]
+
+    const addToCartButton = getByText(/add to cart/i)
+
+    fireEvent.click(addToCartButton)
+
+    act(() => {
+      runQueueTask()
+    })
+
+    // the item is added for a brief moment
+    await waitFor(() => {
+      expect(queryAllByText(/Tropez/)).toHaveLength(1)
+    })
+
+    itemsToAdd = [mockItemSeller2]
+
+    fireEvent.click(addToCartButton)
+
+    act(() => {
+      runQueueTask()
+    })
+
+    await waitFor(() => {
+      expect(queryAllByText(/Tropez/)).toHaveLength(2)
+    })
+
+    fireEvent.click(addToCartButton)
+
+    act(() => {
+      runQueueTask()
+      jest.runAllTimers()
+    })
+
+    // // the item is added for a brief moment
+    await waitFor(() => {
+      expect(queryByText('St Tropez Top Shorts: 1')).toBeInTheDocument()
+      expect(queryByText('St Tropez Top Shorts: 2')).toBeInTheDocument()
+    })
   })
 })

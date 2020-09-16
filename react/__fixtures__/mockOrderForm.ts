@@ -190,3 +190,32 @@ export const mockCatalogItems2: CatalogItem[] = [
     options: [],
   },
 ]
+
+export const mockItemSeller1 = {
+  id: '2000536',
+  availability: 'AVAILABLE',
+  additionalInfo: {
+    brandName: 'Samsung',
+  },
+  productId: '2000004',
+  quantity: 1,
+  uniqueId: '',
+  detailUrl: '/st-tropez-shorts/p',
+  name: 'St Tropez Top Shorts',
+  seller: '1',
+  skuName: 'Navy Blue',
+  price: 303000,
+  listPrice: 303000,
+  sellingPrice: 303000,
+  measurementUnit: 'un',
+  skuSpecifications: [],
+  imageUrl:
+    'https://storecomponents.vtexassets.com/arquivos/ids/155488-500-auto?width=500&height=auto&aspect=true',
+  options: [],
+}
+
+export const mockItemSeller2 = {
+  ...mockItemSeller1,
+  id: `${mockItemSeller1.id}2`,
+  seller: '2',
+}
