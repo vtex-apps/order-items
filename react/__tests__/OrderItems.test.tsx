@@ -410,6 +410,7 @@ describe('OrderItems', () => {
   })
 
   it('should increment the quantity of an item already in the cart', async () => {
+    jest.useFakeTimers()
     const Component: FunctionComponent = () => {
       const {
         orderForm: { items },
@@ -445,7 +446,7 @@ describe('OrderItems', () => {
 
     const mockUpdateItem = mockUpdateItemMutation({
       args: [{ uniqueId: mockCatalogItems[0].uniqueId, quantity: 2 }],
-      result: [{ ...mockCatalogItems[0], quantity: 3 }],
+      result: [{ ...mockCatalogItems[0], quantity: 2 }],
     })
 
     const { getByText, queryByText } = render(
@@ -465,9 +466,8 @@ describe('OrderItems', () => {
 
     const addToCartButton = getByText(/add to cart/i)
 
-    fireEvent.click(addToCartButton)
-
     act(() => {
+      fireEvent.click(addToCartButton)
       runQueueTask()
     })
 
@@ -476,15 +476,15 @@ describe('OrderItems', () => {
       expect(queryByText('St Tropez Top Shorts: 1')).toBeInTheDocument()
     )
 
-    fireEvent.click(addToCartButton)
-
     act(() => {
+      fireEvent.click(addToCartButton)
       runQueueTask()
+      jest.runAllTimers()
     })
 
     // the item is added for a brief moment
     await waitFor(() =>
-      expect(queryByText('St Tropez Top Shorts: 3')).toBeInTheDocument()
+      expect(queryByText('St Tropez Top Shorts: 2')).toBeInTheDocument()
     )
   })
 })
