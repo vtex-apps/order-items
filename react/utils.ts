@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import * as uuid from 'uuid'
 import { Item } from 'vtex.checkout-graphql'
 
@@ -15,10 +16,7 @@ export const adjustForItemInput = (
   }
 }
 
-export const mapItemInputToOrderFormItem = (
-  itemInput: OrderFormItemInput,
-  cartItem: Partial<CatalogItem>
-): Item => {
+export const mapToOrderFormItem = (cartItem: Partial<CatalogItem>): Item => {
   return {
     id: cartItem.id!,
     productId: cartItem.productId!,
@@ -34,12 +32,17 @@ export const mapItemInputToOrderFormItem = (
     listPrice: cartItem.listPrice!,
     sellingPrice: cartItem.sellingPrice!,
     measurementUnit: cartItem.measurementUnit!,
-    quantity: itemInput.quantity ?? 1,
-    uniqueId: ('uniqueId' in itemInput && itemInput.uniqueId) || uuid.v4(),
+    quantity: cartItem.quantity ?? 1,
+    uniqueId: cartItem?.uniqueId ?? uuid.v4(),
     detailUrl: cartItem.detailUrl!,
     availability: cartItem.availability ?? AVAILABLE,
     additionalInfo: cartItem.additionalInfo!,
     options: cartItem.options,
+    seller: cartItem.seller!,
+    attachmentOfferings: [],
+    attachments: [],
+    bundleItems: [],
+    offerings: [],
   }
 }
 

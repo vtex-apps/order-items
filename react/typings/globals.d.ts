@@ -53,3 +53,11 @@ interface Totalizer {
   name: string
   value: number
 }
+
+interface UpdateItemsMutation {
+  updateItems: OrderForm
+}
+
+interface FakeUniqueIdMap {
+  [fakeUniqueId: string]: string
+}

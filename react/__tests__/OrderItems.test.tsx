@@ -22,10 +22,13 @@ const {
   OrderQueue: { runQueueTask, resetQueue, ensureEmptyQueue },
 } = jest.requireMock('vtex.order-manager')
 
-const mockAddItemMutation = (
-  args: Array<Partial<ItemInput>>,
+const mockAddItemMutation = ({
+  args,
+  result,
+}: {
+  args: Array<Partial<ItemInput>>
   result: Array<Partial<Item>>
-) => ({
+}) => ({
   request: {
     query: AddToCart,
     variables: {
@@ -42,10 +45,13 @@ const mockAddItemMutation = (
   },
 })
 
-const mockUpdateItemMutation = (
-  args: Array<Partial<Item>>,
+const mockUpdateItemMutation = ({
+  args,
+  result,
+}: {
+  args: Array<Partial<Item>>
   result: Array<Partial<Item>>
-) => ({
+}) => ({
   request: {
     query: UpdateItem,
     variables: {
@@ -76,7 +82,9 @@ describe('OrderItems', () => {
       const {
         orderForm: { items },
       } = useOrderForm()
+
       const { updateQuantity } = useOrderItems()
+
       return (
         <div>
           {items.map((item: Item) => (
@@ -91,14 +99,14 @@ describe('OrderItems', () => {
       )
     }
 
-    const mockUpdateItem = mockUpdateItemMutation(
-      [{ uniqueId: mockOrderForm.items[1].uniqueId, quantity: 123 }],
-      adjust(
+    const mockUpdateItem = mockUpdateItemMutation({
+      args: [{ uniqueId: mockOrderForm.items[1].uniqueId, quantity: 123 }],
+      result: adjust(
         1,
         (item: Item) => ({ ...item, quantity: 42 }),
         mockOrderForm.items
-      )
-    )
+      ),
+    })
 
     const { getByText } = render(
       <MockedProvider mocks={[mockUpdateItem]} addTypename={false}>
@@ -123,7 +131,7 @@ describe('OrderItems', () => {
 
     await act(
       () =>
-        new Promise<void>(resolve => {
+        new Promise<void>((resolve) => {
           setTimeout(() => resolve())
         })
     ) // waits for actual mutation result
@@ -135,7 +143,9 @@ describe('OrderItems', () => {
       const {
         orderForm: { items },
       } = useOrderForm()
+
       const { removeItem } = useOrderItems()
+
       return (
         <div>
           {items.map((item: Item) => (
@@ -154,10 +164,14 @@ describe('OrderItems', () => {
       )
     }
 
-    const mockUpdateItem = mockUpdateItemMutation(
-      [{ uniqueId: mockOrderForm.items[0].uniqueId, quantity: 0 }],
-      adjust(0, (item: Item) => ({ ...item, quantity: 7 }), mockOrderForm.items)
-    )
+    const mockUpdateItem = mockUpdateItemMutation({
+      args: [{ uniqueId: mockOrderForm.items[0].uniqueId, quantity: 0 }],
+      result: adjust(
+        0,
+        (item: Item) => ({ ...item, quantity: 7 }),
+        mockOrderForm.items
+      ),
+    })
 
     const { getByText, queryByText } = render(
       <MockedProvider mocks={[mockUpdateItem]} addTypename={false}>
@@ -187,7 +201,7 @@ describe('OrderItems', () => {
     ).toBeFalsy() // optimistic response
 
     await act(
-      () => new Promise<void>(resolve => setTimeout(() => resolve()))
+      () => new Promise<void>((resolve) => setTimeout(() => resolve()))
     ) // waits for actual mutation result
 
     expect(getByText(`${mockOrderForm.items[0].name}: 7`)).toBeTruthy()
@@ -232,7 +246,9 @@ describe('OrderItems', () => {
       const {
         orderForm: { items },
       } = useOrderForm()
+
       const { addItem } = useOrderItems()
+
       return (
         <div>
           {items.map((item: Item) => (
@@ -280,11 +296,11 @@ describe('OrderItems', () => {
     )
   })
 
-  it('should add items to cart when any of the items are already in the cart', async () => {
+  it('should add items to cart when any of the items in the input array are already in the cart', async () => {
     jest.useFakeTimers()
 
-    const mockAddItems = mockAddItemMutation(
-      [
+    const mockAddItems = mockAddItemMutation({
+      args: [
         {
           id: +mockCatalogItems[0].id,
           quantity: 1,
@@ -298,20 +314,14 @@ describe('OrderItems', () => {
           options: [],
         },
       ],
-      [
-        {
-          ...mockCatalogItems[0],
-          quantity: 1,
-        },
-        {
-          ...mockCatalogItems[1],
-          quantity: 1,
-        },
-      ]
-    )
+      result: [
+        { ...mockCatalogItems[0], quantity: 1 },
+        { ...mockCatalogItems[1], quantity: 1 },
+      ],
+    })
 
-    const mockAddItems2 = mockAddItemMutation(
-      [
+    const mockAddItems2 = mockAddItemMutation({
+      args: [
         {
           id: +mockCatalogItems2[0].id,
           quantity: 1,
@@ -325,21 +335,12 @@ describe('OrderItems', () => {
           options: [],
         },
       ],
-      [
-        {
-          ...mockCatalogItems[0],
-          quantity: 1,
-        },
-        {
-          ...mockCatalogItems[1],
-          quantity: 1,
-        },
-        {
-          ...mockCatalogItems2[0],
-          quantity: 1,
-        },
-      ]
-    )
+      result: [
+        { ...mockCatalogItems[0], quantity: 1 },
+        { ...mockCatalogItems[1], quantity: 1 },
+        { ...mockCatalogItems2[0], quantity: 1 },
+      ],
+    })
 
     let itemsToAdd = mockCatalogItems
 
@@ -347,6 +348,7 @@ describe('OrderItems', () => {
       const {
         orderForm: { items },
       } = useOrderForm()
+
       const { addItem } = useOrderItems()
 
       return (
@@ -404,6 +406,85 @@ describe('OrderItems', () => {
     // should add the element that was not yet in the cart
     await waitFor(() =>
       expect(queryByText('St Tropez Top Shorts: Green')).toBeInTheDocument()
+    )
+  })
+
+  it('should increment the quantity of an item already in the cart', async () => {
+    jest.useFakeTimers()
+    const Component: FunctionComponent = () => {
+      const {
+        orderForm: { items },
+      } = useOrderForm()
+
+      const { addItem } = useOrderItems()
+
+      return (
+        <div>
+          {items.map((item: Item) => (
+            <div key={item.id}>
+              {item.name}: {item.quantity}
+            </div>
+          ))}
+          <button onClick={() => addItem([mockCatalogItems[0]])}>
+            add to cart
+          </button>
+        </div>
+      )
+    }
+
+    const mockAddItems = mockAddItemMutation({
+      args: [
+        {
+          id: +mockCatalogItems[0].id,
+          quantity: 1,
+          seller: mockCatalogItems[0].seller,
+          options: [],
+        },
+      ],
+      result: [{ ...mockCatalogItems[0], quantity: 1 }],
+    })
+
+    const mockUpdateItem = mockUpdateItemMutation({
+      args: [{ uniqueId: mockCatalogItems[0].uniqueId, quantity: 2 }],
+      result: [{ ...mockCatalogItems[0], quantity: 2 }],
+    })
+
+    const { getByText, queryByText } = render(
+      <MockedProvider
+        mocks={[mockAddItems, mockUpdateItem]}
+        addTypename={false}
+      >
+        <OrderQueueProvider>
+          <OrderFormProvider>
+            <OrderItemsProvider>
+              <Component />
+            </OrderItemsProvider>
+          </OrderFormProvider>
+        </OrderQueueProvider>
+      </MockedProvider>
+    )
+
+    const addToCartButton = getByText(/add to cart/i)
+
+    act(() => {
+      fireEvent.click(addToCartButton)
+      runQueueTask()
+    })
+
+    // the item is added for a brief moment
+    await waitFor(() =>
+      expect(queryByText('St Tropez Top Shorts: 1')).toBeInTheDocument()
+    )
+
+    act(() => {
+      fireEvent.click(addToCartButton)
+      runQueueTask()
+      jest.runAllTimers()
+    })
+
+    // the item is added for a brief moment
+    await waitFor(() =>
+      expect(queryByText('St Tropez Top Shorts: 2')).toBeInTheDocument()
     )
   })
 })
