@@ -525,7 +525,10 @@ const OrderItemsProvider: FC = ({ children }) => {
           if (existingItem == null) {
             newList.push(item)
           } else {
-            updateList.push(item)
+            updateList.push({
+              ...item,
+              quantity: (item.quantity ?? 1) + existingItem!.quantity,
+            })
           }
 
           return acc
@@ -534,14 +537,7 @@ const OrderItemsProvider: FC = ({ children }) => {
       )
 
       if (updatedItems.length) {
-        updatedItems.forEach((item) => {
-          const existingItem = findExistingItem(item, orderFormItemsRef.current)
-
-          updateQuantity({
-            ...item,
-            quantity: (item.quantity ?? 1) + existingItem!.quantity,
-          })
-        })
+        updatedItems.forEach((item) => updateQuantity(item))
       }
 
       if (newItems.length === 0) {
