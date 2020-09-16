@@ -1,6 +1,6 @@
 import { Item } from 'vtex.checkout-graphql'
 
-export enum LocalOrderTaskType {
+export const enum LocalOrderTaskType {
   ADD_MUTATION = 'add_mutation',
   UPDATE_MUTATION = 'update_mutation',
 }
@@ -69,7 +69,7 @@ const saveLocalOrderQueue = (orderQueue: LocalOrderQueue) => {
   localStorage.setItem('orderQueue', JSON.stringify(orderQueue))
 }
 
-export const pushLocalOrderQueue: PushLocalOrderQueueFn = task => {
+export const pushLocalOrderQueue: PushLocalOrderQueueFn = (task) => {
   const orderQueue = getLocalOrderQueue()
 
   orderQueue!.queue.push(task)
@@ -93,13 +93,13 @@ export const updateLocalQueueItemIds: UpdateLocalQueueItemIdsFn = ({
 }) => {
   const orderQueue = getLocalOrderQueue()
 
-  orderQueue.queue = orderQueue.queue.map(task => {
+  orderQueue.queue = orderQueue.queue.map((task) => {
     if (task.type !== LocalOrderTaskType.UPDATE_MUTATION) {
       return task
     }
 
     const itemIndex = task.variables.orderItems.findIndex(
-      input => 'uniqueId' in input && input.uniqueId === fakeUniqueId
+      (input) => 'uniqueId' in input && input.uniqueId === fakeUniqueId
     )
 
     if (itemIndex > -1) {

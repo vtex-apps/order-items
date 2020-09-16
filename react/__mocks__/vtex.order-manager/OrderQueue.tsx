@@ -13,8 +13,8 @@ export const resetQueue = () => {
   queue = []
 }
 
-const enqueue = jest.fn(f => {
-  return new Promise<any>(resolve => {
+const enqueue = jest.fn((f) => {
+  return new Promise<any>((resolve) => {
     queue.push([f, resolve])
   })
 })
@@ -59,7 +59,7 @@ export const useQueueStatus = (_: any) => {
   return useRef('Fulfilled')
 }
 
-export enum QueueStatus {
+export const enum QueueStatus {
   PENDING = 'Pending',
   FULFILLED = 'Fulfilled',
 }
