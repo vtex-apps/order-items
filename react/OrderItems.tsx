@@ -30,6 +30,35 @@ const enum Totalizers {
   DISCOUNT = 'Discounts',
 }
 
+const isSameItem = (
+  input: Partial<CatalogItem> | Item | OrderFormItemInput,
+  item: Item,
+  items: Array<Item | Partial<CatalogItem>>
+) => {
+  const isSameId = input.id?.toString() === item.id
+  const isSameSeller = input.seller === item.seller
+
+  // input has no options
+  if (input.options == null) {
+    // and the comparing item has, not the same item
+    if (item.options?.length) {
+      return false
+    }
+
+    // neither have options, just compare id and seller
+    return isSameId && isSameSeller
+  }
+
+  // TODO: maybe support comparing inputValues
+
+  // does every option (assuming assembly option) existing in the cart as separate products?
+  const optionsExistInCart = input.options.every((opItem) =>
+    items.find((i) => i.id === opItem.id)
+  )
+
+  return isSameId && isSameSeller && optionsExistInCart
+}
+
 const updateTotalizersAndValue = ({
   totalizers,
   currentValue = 0,
@@ -200,8 +229,8 @@ const useAddItemsTask = (
             ...prevOrderForm,
             items: prevOrderForm.items
               .map((item) => {
-                const inputIndex = mutationInputItems.findIndex(
-                  (inputItem) => inputItem.id === +item.id
+                const inputIndex = mutationInputItems.findIndex((inputItem) =>
+                  isSameItem(inputItem, item, prevOrderForm.items)
                 )
 
                 if (inputIndex === -1) {
@@ -381,39 +410,6 @@ const useFakeUniqueIdMap = () => {
 interface UpdateItemsMutation {
   updateItems: OrderForm
 }
-
-const findExistingItem = (
-  input: Partial<CatalogItem> | Item,
-  items: Item[]
-) => {
-  const idSet = new Set(items.map((i) => i.id))
-
-  return items.find((item: Item) => {
-    const isSameId = input.id?.toString() === item.id
-    const isSameSeller = input.seller === item.seller
-
-    // input has no options
-    if (input.options == null) {
-      // and the comparing item has, not the same item
-      if (item.options?.length) {
-        return false
-      }
-
-      // neither have options, just compare id and seller
-      return isSameId && isSameSeller
-    }
-
-    // TODO: maybe support comparing inputValues
-
-    // does every option (assuming assembly option) existing in the cart as separate products?
-    const optionsExistInCart = input.options.every((opItem) =>
-      idSet.has(opItem.id)
-    )
-
-    return isSameId && isSameSeller && optionsExistInCart
-  })
-}
-
 const OrderItemsProvider: FC = ({ children }) => {
   const { orderForm, setOrderForm } = useOrderForm()
 
@@ -437,8 +433,8 @@ const OrderItemsProvider: FC = ({ children }) => {
       const currentOrderFormItems = orderFormItemsRef.current
 
       if (input.id) {
-        index = currentOrderFormItems.findIndex(
-          (orderItem) => orderItem.id === input.id
+        index = currentOrderFormItems.findIndex((orderItem) =>
+          isSameItem(input, orderItem, currentOrderFormItems)
         )
       } else if ('uniqueId' in input) {
         uniqueId = input.uniqueId
@@ -520,7 +516,10 @@ const OrderItemsProvider: FC = ({ children }) => {
       >(
         (acc, item) => {
           const { newItems: newList, updatedItems: updateList } = acc
-          const existingItem = findExistingItem(item, orderFormItemsRef.current)
+
+          const existingItem = orderFormItemsRef.current.find((i) =>
+            isSameItem(item, i, items)
+          )
 
           if (existingItem == null) {
             newList.push(item)
