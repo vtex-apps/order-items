@@ -283,12 +283,9 @@ const useAddItemsTask = (
 const useSetManualPrice = () => {
   const [mutateSetManualPrice] = useMutation<SetManualPrice>(SetManualPrice)
 
-  console.log('exec hook')
-
-  const setManualPriceTask = (price: number, itemIndex: number) => {
+  const setManualPriceTask = useCallback((price: number, itemIndex: number) => {
     return {
       execute: async () => {
-        console.log('exec mutation')
         const { data } = await mutateSetManualPrice({
             variables: {manualPriceInput: { itemIndex, price}},
           })
@@ -296,7 +293,7 @@ const useSetManualPrice = () => {
         return data!.setManualPrice
       }
     }
-  }
+  }, [mutateSetManualPrice])
 
   return setManualPriceTask
 }
@@ -614,9 +611,9 @@ const OrderItemsProvider: FC = ({ children }) => {
     [addItemsTask, enqueueTask, setOrderForm, updateQuantity]
   )
 
-  const setManualPrice = (price: number, itemIndex: number) => {
+  const setManualPrice = useCallback((price: number, itemIndex: number) => {
     enqueueTask(setManualPriceTask(price, itemIndex))
-  }
+  }, [enqueueTask, setManualPriceTask])
 
   const removeItem = useCallback(
     (props: Partial<Item>) => updateQuantity({ ...props, quantity: 0 }),
