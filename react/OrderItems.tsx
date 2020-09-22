@@ -5,7 +5,7 @@ import UpdateItems from 'vtex.checkout-resources/MutationUpdateItems'
 import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
 import SetManualPrice from 'vtex.checkout-resources/MutationSetManualPrice'
 import { OrderForm, OrderQueue } from 'vtex.order-manager'
-import { Item, OrderForm } from 'vtex.checkout-graphql'
+import { Item } from 'vtex.checkout-graphql'
 
 import { OrderItemsContext, useOrderItems } from './modules/OrderItemsContext'
 import {

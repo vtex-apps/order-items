@@ -21,7 +21,6 @@ export const mapToOrderFormItem = (cartItem: Partial<CatalogItem>): Item => {
     id: cartItem.id!,
     productId: cartItem.productId!,
     name: cartItem.name!,
-    seller: cartItem.seller!,
     skuName: cartItem.skuName!,
     skuSpecifications: cartItem.skuSpecifications!,
     imageUrls: {
@@ -39,6 +38,7 @@ export const mapToOrderFormItem = (cartItem: Partial<CatalogItem>): Item => {
     availability: cartItem.availability ?? AVAILABLE,
     additionalInfo: cartItem.additionalInfo!,
     options: cartItem.options,
+    seller: cartItem.seller!,
     attachmentOfferings: [],
     attachments: [],
     bundleItems: [],
