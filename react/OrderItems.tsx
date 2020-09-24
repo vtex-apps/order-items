@@ -283,17 +283,20 @@ const useAddItemsTask = (
 const useSetManualPrice = () => {
   const [mutateSetManualPrice] = useMutation<SetManualPrice>(SetManualPrice)
 
-  const setManualPriceTask = useCallback((price: number, itemIndex: number) => {
-    return {
-      execute: async () => {
-        const { data } = await mutateSetManualPrice({
-            variables: {manualPriceInput: { itemIndex, price}},
+  const setManualPriceTask = useCallback(
+    (price: number, itemIndex: number) => {
+      return {
+        execute: async () => {
+          const { data } = await mutateSetManualPrice({
+            variables: { manualPriceInput: { itemIndex, price } },
           })
 
-        return data!.setManualPrice
+          return data!.setManualPrice
+        },
       }
-    }
-  }, [mutateSetManualPrice])
+    },
+    [mutateSetManualPrice]
+  )
 
   return setManualPriceTask
 }
@@ -611,21 +614,22 @@ const OrderItemsProvider: FC = ({ children }) => {
     [addItemsTask, enqueueTask, setOrderForm, updateQuantity]
   )
 
-  const setManualPrice = useCallback((price: number, itemIndex: number) => {
-    enqueueTask(setManualPriceTask(price, itemIndex))
-  }, [enqueueTask, setManualPriceTask])
+  const setManualPrice = useCallback(
+    (price: number, itemIndex: number) => {
+      enqueueTask(setManualPriceTask(price, itemIndex))
+    },
+    [enqueueTask, setManualPriceTask]
+  )
 
   const removeItem = useCallback(
     (props: Partial<Item>) => updateQuantity({ ...props, quantity: 0 }),
     [updateQuantity]
   )
 
-  const value = useMemo(() => ({ addItem, updateQuantity, removeItem, setManualPrice }), [
-    addItem,
-    updateQuantity,
-    removeItem,
-    setManualPrice
-  ])
+  const value = useMemo(
+    () => ({ addItem, updateQuantity, removeItem, setManualPrice }),
+    [addItem, updateQuantity, removeItem, setManualPrice]
+  )
 
   useEffect(() => {
     const localOrderQueue = getLocalOrderQueue()

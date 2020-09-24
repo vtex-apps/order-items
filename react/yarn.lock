@@ -5227,13 +5227,13 @@ verror@1.10.0:
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
 
-"vtex.checkout-graphql@https://jeff--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.checkout-graphql@0.39.1+build1600781451/public/@types/vtex.checkout-graphql":
+"vtex.checkout-graphql@https://jeff--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.checkout-graphql@0.39.1+build1600865504/public/@types/vtex.checkout-graphql":
   version "0.39.1"
-  resolved "https://jeff--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.checkout-graphql@0.39.1+build1600781451/public/@types/vtex.checkout-graphql#a8bab7f25d5856db96f73493550214b993846c5c"
+  resolved "https://jeff--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.checkout-graphql@0.39.1+build1600865504/public/@types/vtex.checkout-graphql#c1ee6c8ba5b63956f2ca87da7be51021d389a2b0"
 
-"vtex.checkout-resources@https://jeff--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.checkout-resources@0.34.0+build1600781049/public/@types/vtex.checkout-resources":
+"vtex.checkout-resources@https://jeff--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.checkout-resources@0.34.0+build1600865561/public/@types/vtex.checkout-resources":
   version "0.34.0"
-  resolved "https://jeff--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.checkout-resources@0.34.0+build1600781049/public/@types/vtex.checkout-resources#955eadab377d84222180c080d97e9b79781dcd7a"
+  resolved "https://jeff--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.checkout-resources@0.34.0+build1600865561/public/@types/vtex.checkout-resources#a21964fc0c8c5b20deb053d9dddc10a506a4c98f"
 
 "vtex.order-manager@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.8.6/public/@types/vtex.order-manager":
   version "0.8.6"
