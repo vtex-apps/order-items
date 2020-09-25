@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
-
 - `setManualPrice` function which uses and exposes `SetManualPrice` mutation.
 
 ## [0.8.2] - 2020-09-17
