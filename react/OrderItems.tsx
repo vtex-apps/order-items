@@ -3,6 +3,7 @@ import React, { FC, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useMutation } from 'react-apollo'
 import UpdateItems from 'vtex.checkout-resources/MutationUpdateItems'
 import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
+import SetManualPrice from 'vtex.checkout-resources/MutationSetManualPrice'
 import { OrderForm, OrderQueue } from 'vtex.order-manager'
 import { Item } from 'vtex.checkout-graphql'
 
@@ -279,6 +280,27 @@ const useAddItemsTask = (
   return addItemTask
 }
 
+const useSetManualPrice = () => {
+  const [mutateSetManualPrice] = useMutation<SetManualPrice>(SetManualPrice)
+
+  const setManualPriceTask = useCallback(
+    (price: number, itemIndex: number) => {
+      return {
+        execute: async () => {
+          const { data } = await mutateSetManualPrice({
+            variables: { manualPriceInput: { itemIndex, price } },
+          })
+
+          return data!.setManualPrice
+        },
+      }
+    },
+    [mutateSetManualPrice]
+  )
+
+  return setManualPriceTask
+}
+
 const useUpdateItemsTask = (
   fakeUniqueIdMapRef: React.MutableRefObject<FakeUniqueIdMap>
 ) => {
@@ -407,6 +429,10 @@ const useFakeUniqueIdMap = () => {
   return fakeUniqueIdMapRef
 }
 
+interface SetManualPrice {
+  setManualPrice: OrderForm
+}
+
 interface UpdateItemsMutation {
   updateItems: OrderForm
 }
@@ -418,6 +444,7 @@ const OrderItemsProvider: FC = ({ children }) => {
   const enqueueTask = useEnqueueTask()
   const addItemsTask = useAddItemsTask(fakeUniqueIdMapRef)
   const updateItemsTask = useUpdateItemsTask(fakeUniqueIdMapRef)
+  const setManualPriceTask = useSetManualPrice()
 
   const orderFormItemsRef = useRef(orderForm.items)
 
@@ -587,16 +614,22 @@ const OrderItemsProvider: FC = ({ children }) => {
     [addItemsTask, enqueueTask, setOrderForm, updateQuantity]
   )
 
+  const setManualPrice = useCallback(
+    (price: number, itemIndex: number) => {
+      enqueueTask(setManualPriceTask(price, itemIndex))
+    },
+    [enqueueTask, setManualPriceTask]
+  )
+
   const removeItem = useCallback(
     (props: Partial<Item>) => updateQuantity({ ...props, quantity: 0 }),
     [updateQuantity]
   )
 
-  const value = useMemo(() => ({ addItem, updateQuantity, removeItem }), [
-    addItem,
-    updateQuantity,
-    removeItem,
-  ])
+  const value = useMemo(
+    () => ({ addItem, updateQuantity, removeItem, setManualPrice }),
+    [addItem, updateQuantity, removeItem, setManualPrice]
+  )
 
   useEffect(() => {
     const localOrderQueue = getLocalOrderQueue()
