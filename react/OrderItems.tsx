@@ -6,6 +6,7 @@ import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
 import SetManualPrice from 'vtex.checkout-resources/MutationSetManualPrice'
 import { OrderForm, OrderQueue } from 'vtex.order-manager'
 import { Item } from 'vtex.checkout-graphql'
+import { useSplunk } from 'vtex.checkout-splunk'
 
 import { OrderItemsContext, useOrderItems } from './modules/OrderItemsContext'
 import {
@@ -139,6 +140,7 @@ interface Task {
 }
 
 const useEnqueueTask = () => {
+  const { logSplunk } = useSplunk()
   const { enqueue, listen } = useOrderQueue()
   const queueStatusRef = useQueueStatus(listen)
   const { setOrderForm } = useOrderForm()
@@ -159,10 +161,18 @@ const useEnqueueTask = () => {
             return
           }
 
+          logSplunk({
+            type: 'Error',
+            level: 'Critical',
+            event: error,
+            workflowType: 'OrderItems',
+            workflowInstance: 'enqueue-task-error',
+          })
+
           throw error
         }
       ),
-    [enqueue, queueStatusRef, setOrderForm]
+    [enqueue, queueStatusRef, setOrderForm, logSplunk]
   )
 
   return enqueueTask
@@ -176,6 +186,7 @@ const useAddItemsTask = (
     { items: OrderFormItemInput[]; marketingData?: Partial<MarketingData> }
   >(AddToCart)
 
+  const { logSplunk } = useSplunk()
   const { setOrderForm } = useOrderForm()
 
   const addItemTask = useCallback(
@@ -189,14 +200,26 @@ const useAddItemsTask = (
       orderFormItems: Item[]
     }) => ({
       execute: async () => {
-        const { data } = await mutateAddItem({
+        const { data, errors } = await mutateAddItem({
           variables: {
             items: mutationInputItems,
             marketingData: mutationInputMarketingData,
           },
         })
 
-        const updatedOrderForm = data!.addToCart
+        if (!data || (errors?.length ?? 0) > 0) {
+          logSplunk({
+            type: 'Error',
+            level: 'Critical',
+            workflowType: 'OrderItems',
+            workflowInstance: 'add-items-mutation',
+            event: (errors?.[0].originalError as any) ?? {},
+          })
+
+          throw errors?.[0] as Error
+        }
+
+        const updatedOrderForm = data.addToCart
 
         // update the uniqueId of the items that were
         // added locally with the value from the server
@@ -274,7 +297,7 @@ const useAddItemsTask = (
         })
       },
     }),
-    [fakeUniqueIdMapRef, mutateAddItem, setOrderForm]
+    [fakeUniqueIdMapRef, mutateAddItem, setOrderForm, logSplunk]
   )
 
   return addItemTask
@@ -306,6 +329,7 @@ const useUpdateItemsTask = (
 ) => {
   const [mutateUpdateQuantity] = useMutation<UpdateItemsMutation>(UpdateItems)
   const { setOrderForm } = useOrderForm()
+  const { logSplunk } = useSplunk()
 
   const updateItemTask = useCallback(
     ({
@@ -338,11 +362,23 @@ const useUpdateItemsTask = (
             }),
           }
 
-          const { data } = await mutateUpdateQuantity({
+          const { data, errors } = await mutateUpdateQuantity({
             variables: mutationVariables,
           })
 
-          return data!.updateItems
+          if (!data || (errors?.length ?? 0) > 0) {
+            logSplunk({
+              type: 'Error',
+              level: 'Critical',
+              workflowType: 'OrderItems',
+              workflowInstance: 'update-items-mutation',
+              event: (errors?.[0].originalError as any) ?? {},
+            })
+
+            throw errors?.[0] as Error
+          }
+
+          return data.updateItems
         },
         rollback: () => {
           const deletedItemsInput = items.filter(
@@ -400,7 +436,7 @@ const useUpdateItemsTask = (
         },
       }
     },
-    [fakeUniqueIdMapRef, mutateUpdateQuantity, setOrderForm]
+    [fakeUniqueIdMapRef, mutateUpdateQuantity, setOrderForm, logSplunk]
   )
 
   return updateItemTask
