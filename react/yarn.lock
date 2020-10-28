@@ -5234,13 +5234,13 @@ verror@1.10.0:
   version "0.1.0"
   resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-splunk@0.1.0/public/@types/vtex.checkout-splunk#d5670aa05efa8b7d4ee58750506d7e0ece85b8c8"
 
-"vtex.order-manager@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.8.6/public/@types/vtex.order-manager":
-  version "0.8.6"
-  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.8.6/public/@types/vtex.order-manager#7439a66d02f5d79fd48ff3b87f6e3c8586259396"
+"vtex.order-manager@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.8.7/public/@types/vtex.order-manager":
+  version "0.8.7"
+  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.8.7/public/@types/vtex.order-manager#d666dbf9c6d630dba38ac26e815ffaa3811933df"
 
-"vtex.render-runtime@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.121.0/public/@types/vtex.render-runtime":
-  version "8.121.0"
-  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.121.0/public/@types/vtex.render-runtime#2d5cfba8888df1844a808828b87e5331ab5baa59"
+"vtex.render-runtime@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.124.2/public/@types/vtex.render-runtime":
+  version "8.124.2"
+  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.124.2/public/@types/vtex.render-runtime#d535e94b7f0a1fe69c79a2cb107f8c4a227a8b79"
 
 w3c-hr-time@^1.0.1:
   version "1.0.2"
