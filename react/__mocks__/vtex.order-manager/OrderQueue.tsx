@@ -59,6 +59,7 @@ export const useQueueStatus = (_: any) => {
   return useRef('Fulfilled')
 }
 
+// eslint-disable-next-line no-shadow
 export const enum QueueStatus {
   PENDING = 'Pending',
   FULFILLED = 'Fulfilled',

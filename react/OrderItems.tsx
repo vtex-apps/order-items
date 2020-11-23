@@ -5,7 +5,7 @@ import UpdateItems from 'vtex.checkout-resources/MutationUpdateItems'
 import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
 import SetManualPrice from 'vtex.checkout-resources/MutationSetManualPrice'
 import { OrderForm, OrderQueue } from 'vtex.order-manager'
-import { Item } from 'vtex.checkout-graphql'
+import { Item, AssemblyOptionInput } from 'vtex.checkout-graphql'
 import { useSplunk } from 'vtex.checkout-splunk'
 
 import { OrderItemsContext, useOrderItems } from './modules/OrderItemsContext'
@@ -27,6 +27,7 @@ import {
 const { useOrderForm } = OrderForm
 const { useOrderQueue, useQueueStatus, QueueStatus } = OrderQueue
 
+// eslint-disable-next-line no-shadow
 const enum Totalizers {
   SUBTOTAL = 'Items',
   DISCOUNT = 'Discounts',
@@ -54,8 +55,8 @@ const isSameItem = (
   // TODO: maybe support comparing inputValues
 
   // does every option (assuming assembly option) existing in the cart as separate products?
-  const optionsExistInCart = input.options.every((opItem) =>
-    items.find((i) => i.id === opItem.id)
+  const optionsExistInCart = (input.options as AssemblyOptionInput[]).every(
+    (opItem) => items.find((i) => i.id === opItem.id)
   )
 
   return isSameId && isSameSeller && optionsExistInCart
@@ -152,6 +153,13 @@ const useEnqueueTask = () => {
           popLocalOrderQueue()
           if (queueStatusRef.current === QueueStatus.FULFILLED) {
             setOrderForm(orderForm)
+          } else {
+            setOrderForm((prevOrderForm) => ({
+              ...prevOrderForm,
+              messages: {
+                ...orderForm.messages,
+              },
+            }))
           }
         },
         (error: any) => {
