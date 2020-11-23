@@ -1,11 +1,3 @@
 {
-  "extends": "vtex-react",
-  "parserOptions": {
-    "project": "./react/tsconfig.json"
-  },
-  "settings": {
-    "jest": {
-      "version": 25
-    }
-  }
+  "extends": "vtex-react"
 }
