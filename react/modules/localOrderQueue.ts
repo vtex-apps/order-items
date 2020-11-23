@@ -1,5 +1,6 @@
 import { Item } from 'vtex.checkout-graphql'
 
+// eslint-disable-next-line no-shadow
 export const enum LocalOrderTaskType {
   ADD_MUTATION = 'add_mutation',
   UPDATE_MUTATION = 'update_mutation',

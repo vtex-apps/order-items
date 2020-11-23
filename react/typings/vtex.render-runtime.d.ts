@@ -1,6 +1,6 @@
 /* Typings for `render-runtime` */
 declare module 'vtex.render-runtime' {
-  import { Component, ComponentType, ReactElement, ReactType } from 'react'
+  import { ComponentType, ReactElement, ElementType } from 'react'
 
   export interface NavigationOptions {
     page: string
@@ -25,14 +25,16 @@ declare module 'vtex.render-runtime' {
   }
 
   export const ChildBlock: ComponentType<ChildBlockProps>
-  export function useChildBlock({ id: string }): Record {}
+  export function useChildBlock(arg: { id: string }): Record<string, unknown>
 
   export const Helmet: ReactElement
-  export const Link: ReactType
+  export const Link: ElementType
   export const NoSSR: ReactElement
   export const RenderContextConsumer: ReactElement
   export const canUseDOM: boolean
-  export const withRuntimeContext: <TOriginalProps extends Record>(
+  export const withRuntimeContext: <
+    TOriginalProps extends Record<string, unknown>
+  >(
     Component: ComponentType<TOriginalProps & RenderContextProps>
   ) => ComponentType<TOriginalProps>
 }

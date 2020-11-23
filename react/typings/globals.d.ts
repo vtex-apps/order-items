@@ -1,63 +1,65 @@
-interface OrderForm {
-  items: Item[]
-  marketingData: MarketingData | undefined
-  totalizers: Totalizer[]
-  value: number
-}
+import {
+  OrderForm as GraphqlOrderForm,
+  AssemblyOptionInput,
+} from 'vtex.checkout-graphql'
 
-interface OrderFormItemInput {
-  id?: number
-  index?: number
-  quantity?: number
-  seller?: string
-  uniqueId?: string
-  options?: AssemblyOptionInput[]
-}
+declare global {
+  type OrderForm = GraphqlOrderForm
 
-interface CatalogItem {
-  additionalInfo: ItemAdditionalInfo
-  availability: string
-  detailUrl: string
-  id: string
-  imageUrl: string
-  index?: number
-  listPrice: number
-  measurementUnit: string
-  name: string
-  price: number
-  productId: string
-  quantity: number
-  sellingPrice: number
-  seller: string
-  skuName: string
-  skuSpecifications: SKUSpecification[]
-  options?: AssemblyOptionInput[]
-  uniqueId: string
-}
+  interface OrderFormItemInput {
+    id?: number
+    index?: number
+    quantity?: number
+    seller?: string
+    uniqueId?: string
+    options?: AssemblyOptionInput[]
+  }
 
-interface ItemAdditionalInfo {
-  brandName: string
-}
+  interface CatalogItem {
+    additionalInfo: ItemAdditionalInfo
+    availability: string
+    detailUrl: string
+    id: string
+    imageUrl: string
+    index?: number
+    listPrice: number
+    measurementUnit: string
+    name: string
+    price: number
+    productId: string
+    quantity: number
+    sellingPrice: number
+    seller: string
+    skuName: string
+    skuSpecifications: SKUSpecification[]
+    options?: AssemblyOptionInput[]
+    uniqueId: string
+  }
 
-interface MarketingData {
-  coupon: string
-}
+  interface ItemAdditionalInfo {
+    brandName: string
+  }
 
-interface SKUSpecification {
-  fieldName: string
-  fieldValues: string[]
-}
+  interface MarketingData {
+    coupon: string
+  }
 
-interface Totalizer {
-  id: string
-  name: string
-  value: number
-}
+  interface SKUSpecification {
+    fieldName: string
+    fieldValues: string[]
+  }
 
-interface UpdateItemsMutation {
-  updateItems: OrderForm
-}
+  interface Totalizer {
+    id: string
+    name: string
+    value: number
+  }
 
-interface FakeUniqueIdMap {
-  [fakeUniqueId: string]: string
+  interface UpdateItemsMutation {
+    updateItems: OrderForm
+  }
+
+  interface FakeUniqueIdMap {
+    [fakeUniqueId: string]: string
+  }
 }
