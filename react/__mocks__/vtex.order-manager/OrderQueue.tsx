@@ -25,7 +25,7 @@ export const ensureEmptyQueue = () => {
   }
 
   console.error(
-    "Tests ended but the task queue is not empty. Did you forget to call 'runTaskQueue'?"
+    "Tests ended but the task queue is not empty. Did you forget to call 'runQueueTask'?"
   )
 }
 

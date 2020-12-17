@@ -20,6 +20,11 @@ export const mockOrderForm = Object.freeze({
       skuSpecifications: [],
       uniqueId: 'SomeUniqueId0',
       seller: '0',
+      attachmentOfferings: [],
+      attachments: [],
+      bundleItems: [],
+      offerings: [],
+      priceTags: [],
     },
     {
       additionalInfo: {
@@ -41,6 +46,11 @@ export const mockOrderForm = Object.freeze({
       skuSpecifications: [],
       uniqueId: 'SomeUniqueId1',
       seller: '0',
+      attachmentOfferings: [],
+      attachments: [],
+      bundleItems: [],
+      offerings: [],
+      priceTags: [],
     },
     {
       additionalInfo: {
@@ -62,6 +72,11 @@ export const mockOrderForm = Object.freeze({
       skuSpecifications: [],
       uniqueId: 'SomeUniqueId2',
       seller: '0',
+      attachmentOfferings: [],
+      attachments: [],
+      bundleItems: [],
+      offerings: [],
+      priceTags: [],
     },
   ],
   marketingData: null,

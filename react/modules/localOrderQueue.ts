@@ -1,4 +1,4 @@
-import { Item } from 'vtex.checkout-graphql'
+import type { Item } from 'vtex.checkout-graphql'
 
 // eslint-disable-next-line no-shadow
 export const enum LocalOrderTaskType {
@@ -21,11 +21,13 @@ interface AddItemMutationVariables {
 
 type LocalOrderTask =
   | {
+      id?: string
       variables: AddItemMutationVariables
       orderFormItems: Item[]
       type: LocalOrderTaskType.ADD_MUTATION
     }
   | {
+      id?: string
       variables: UpdateQuantityMutationVariables
       orderFormItems: Item[]
       type: LocalOrderTaskType.UPDATE_MUTATION
@@ -40,8 +42,8 @@ const DEFAULT_LOCAL_ORDER_QUEUE: LocalOrderQueue = {
 }
 
 type GetLocalOrderQueue = () => LocalOrderQueue
-type PushLocalOrderQueueFn = (task: LocalOrderTask) => LocalOrderQueue
-type PopLocalOrderQueueFn = () => LocalOrderTask | undefined
+type PushLocalOrderQueueFn = (task: LocalOrderTask) => number
+type PopLocalOrderQueueFn = (index?: number) => LocalOrderTask | undefined
 type UpdateLocalQueueItemIdsFn = (args: {
   fakeUniqueId: string
   uniqueId: string
@@ -73,15 +75,23 @@ const saveLocalOrderQueue = (orderQueue: LocalOrderQueue) => {
 export const pushLocalOrderQueue: PushLocalOrderQueueFn = (task) => {
   const orderQueue = getLocalOrderQueue()
 
-  orderQueue!.queue.push(task)
+  const index = orderQueue.queue.push(task)
+
   saveLocalOrderQueue(orderQueue)
 
-  return orderQueue
+  return index
 }
 
-export const popLocalOrderQueue: PopLocalOrderQueueFn = () => {
+export const popLocalOrderQueue: PopLocalOrderQueueFn = (index = 0) => {
   const orderQueue = getLocalOrderQueue()
-  const task = orderQueue!.queue!.shift()
+
+  const task = orderQueue.queue[index]
+
+  if (!task) {
+    return undefined
+  }
+
+  orderQueue.queue.splice(index, 1)
 
   saveLocalOrderQueue(orderQueue)
 
