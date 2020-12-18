@@ -36,7 +36,7 @@ export const mapToOrderFormItem = (
     sellingPrice: cartItem.sellingPrice!,
     measurementUnit: cartItem.measurementUnit!,
     quantity: cartItem.quantity ?? 1,
-    uniqueId: ('uniqueId' in itemInput && itemInput.uniqueId) || uuid.v4(),
+    uniqueId: itemInput.uniqueId ?? uuid.v4(),
     detailUrl: cartItem.detailUrl!,
     availability: cartItem.availability ?? AVAILABLE,
     additionalInfo: cartItem.additionalInfo!,
