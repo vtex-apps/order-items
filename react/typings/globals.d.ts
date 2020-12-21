@@ -33,7 +33,7 @@ declare global {
     skuName: string
     skuSpecifications: SKUSpecification[]
     options?: AssemblyOptionInput[]
-    uniqueId: string
+    uniqueId?: string
   }
 
   interface ItemAdditionalInfo {

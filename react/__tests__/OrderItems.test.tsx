@@ -1,7 +1,7 @@
 import { adjust } from 'ramda'
 import React, { FunctionComponent } from 'react'
 import { MockedProvider, MockedResponse } from '@apollo/react-testing'
-import { act, render, fireEvent, waitFor } from '@vtex/test-tools/react'
+import { act, render, fireEvent, screen } from '@vtex/test-tools/react'
 import { Item, ItemInput } from 'vtex.checkout-graphql'
 import UpdateItem from 'vtex.checkout-resources/MutationUpdateItems'
 import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
@@ -70,6 +70,16 @@ const mockUpdateItemMutation = ({
   },
 })
 
+const runQueueTaskWithFakeTimers = () => {
+  return act(async () => {
+    const promise = runQueueTask()
+
+    jest.runAllTimers()
+
+    await promise
+  })
+}
+
 describe('OrderItems', () => {
   beforeEach(() => {
     resetQueue()
@@ -77,9 +87,10 @@ describe('OrderItems', () => {
 
   afterEach(() => {
     ensureEmptyQueue()
+    localStorage.clear()
   })
 
-  it('should optimistically update itemList when updateQuantity is called', async () => {
+  it('should optimistically update item list when updateQuantity is called', async () => {
     const Component: FunctionComponent = () => {
       const {
         orderForm: { items },
@@ -110,7 +121,7 @@ describe('OrderItems', () => {
       ),
     })
 
-    const { getByText } = render(
+    render(
       <MockedProvider mocks={[mockUpdateItem]} addTypename={false}>
         <OrderQueueProvider>
           <OrderFormProvider>
@@ -122,25 +133,20 @@ describe('OrderItems', () => {
       </MockedProvider>
     )
 
-    const button = getByText('mutate')
+    const button = screen.getByText('mutate')
 
-    act(() => {
-      fireEvent.click(button)
-      runQueueTask()
+    fireEvent.click(button)
+
+    expect(screen.getByText(`${mockOrderForm.items[1].name}: 123`)).toBeTruthy() // optimistic response
+
+    await act(async () => {
+      await runQueueTask()
     })
 
-    expect(getByText(`${mockOrderForm.items[1].name}: 123`)).toBeTruthy() // optimistic response
-
-    await act(
-      () =>
-        new Promise<void>((resolve) => {
-          setTimeout(() => resolve())
-        })
-    ) // waits for actual mutation result
-    expect(getByText(`${mockOrderForm.items[1].name}: 42`)).toBeTruthy()
+    expect(screen.getByText(`${mockOrderForm.items[1].name}: 42`)).toBeTruthy()
   })
 
-  it('should optimistically update itemList when removeItem is called', async () => {
+  it('should optimistically update item list when removeItem is called', async () => {
     const Component: FunctionComponent = () => {
       const {
         orderForm: { items },
@@ -175,7 +181,7 @@ describe('OrderItems', () => {
       ),
     })
 
-    const { getByText, queryByText } = render(
+    render(
       <MockedProvider mocks={[mockUpdateItem]} addTypename={false}>
         <OrderQueueProvider>
           <OrderFormProvider>
@@ -187,26 +193,18 @@ describe('OrderItems', () => {
       </MockedProvider>
     )
 
-    const button = getByText('mutate')
+    const button = screen.getByText('mutate')
 
-    act(() => {
-      fireEvent.click(button)
-      runQueueTask()
+    fireEvent.click(button)
+
+    // optimistic response
+    expect(screen.queryByText(mockOrderForm.items[0].name)).toBeFalsy()
+
+    await act(async () => {
+      await runQueueTask()
     })
 
-    expect(
-      queryByText(
-        (_: unknown, element: any) =>
-          !!element.textContent &&
-          element.textContent.includes(mockOrderForm.items[0].name)
-      )
-    ).toBeFalsy() // optimistic response
-
-    await act(
-      () => new Promise<void>((resolve) => setTimeout(() => resolve()))
-    ) // waits for actual mutation result
-
-    expect(getByText(`${mockOrderForm.items[0].name}: 7`)).toBeTruthy()
+    expect(screen.getByText(`${mockOrderForm.items[0].name}: 7`)).toBeTruthy()
   })
 
   it("should remove the items that weren't successfully added", async () => {
@@ -263,7 +261,7 @@ describe('OrderItems', () => {
       )
     }
 
-    const { getByText, queryByText } = render(
+    render(
       <MockedProvider mocks={[mockUnavailableItem]} addTypename={false}>
         <OrderQueueProvider>
           <OrderFormProvider>
@@ -275,27 +273,19 @@ describe('OrderItems', () => {
       </MockedProvider>
     )
 
-    const addToCartButton = getByText(/add to cart/i)
+    const addToCartButton = screen.getByText(/add to cart/i)
 
     fireEvent.click(addToCartButton)
 
-    act(() => {
-      runQueueTask()
-    })
-
     // the item is added for a brief moment
-    await waitFor(() =>
-      expect(queryByText('Macacao Pantalona Xo Uruca')).toBeInTheDocument()
-    )
+    expect(screen.queryByText('Macacao Pantalona Xo Uruca')).toBeInTheDocument()
 
-    act(() => {
-      jest.runAllTimers()
-    })
+    await runQueueTaskWithFakeTimers()
 
     // then it is removed
-    await waitFor(() =>
-      expect(queryByText('Macacao Pantalona Xo Uruca')).not.toBeInTheDocument()
-    )
+    expect(
+      screen.queryByText('Macacao Pantalona Xo Uruca')
+    ).not.toBeInTheDocument()
   })
 
   it('should add items to cart when any of the items in the input array are already in the cart', async () => {
@@ -365,7 +355,7 @@ describe('OrderItems', () => {
       )
     }
 
-    const { getByText, queryByText } = render(
+    render(
       <MockedProvider mocks={[mockAddItems, mockAddItems2]} addTypename={false}>
         <OrderQueueProvider>
           <OrderFormProvider>
@@ -378,41 +368,34 @@ describe('OrderItems', () => {
     )
 
     // add first list of elements
-    const addToCartButton = getByText(/add to cart/i)
+    const addToCartButton = screen.getByText(/add to cart/i)
 
     fireEvent.click(addToCartButton)
 
-    act(() => {
-      runQueueTask()
-      jest.runAllTimers()
-    })
+    await runQueueTaskWithFakeTimers()
 
     // should add the two items
-    await waitFor(() =>
-      expect(queryByText('St Tropez Top Shorts: Navy Blue')).toBeInTheDocument()
-    )
+    expect(
+      screen.queryByText('St Tropez Top Shorts: Navy Blue')
+    ).toBeInTheDocument()
 
-    await waitFor(() =>
-      expect(queryByText('Blouse with Knot: Grey')).toBeInTheDocument()
-    )
+    expect(screen.queryByText('Blouse with Knot: Grey')).toBeInTheDocument()
 
     // add second list containing an element that is already in the cart
     itemsToAdd = mockCatalogItems2
     fireEvent.click(addToCartButton)
 
-    act(() => {
-      runQueueTask()
-      jest.runAllTimers()
-    })
+    await runQueueTaskWithFakeTimers()
 
     // should add the element that was not yet in the cart
-    await waitFor(() =>
-      expect(queryByText('St Tropez Top Shorts: Green')).toBeInTheDocument()
-    )
+    expect(
+      screen.queryByText('St Tropez Top Shorts: Green')
+    ).toBeInTheDocument()
   })
 
   it('should increment the quantity of an item already in the cart', async () => {
     jest.useFakeTimers()
+
     const Component: FunctionComponent = () => {
       const {
         orderForm: { items },
@@ -443,15 +426,17 @@ describe('OrderItems', () => {
           options: [],
         },
       ],
-      result: [{ ...mockCatalogItems[0], quantity: 1 }],
+      result: [
+        { ...mockCatalogItems[0], uniqueId: 'added-item-id', quantity: 1 },
+      ],
     })
 
     const mockUpdateItem = mockUpdateItemMutation({
-      args: [{ uniqueId: mockCatalogItems[0].uniqueId, quantity: 2 }],
+      args: [{ uniqueId: 'added-item-id', quantity: 2 }],
       result: [{ ...mockCatalogItems[0], quantity: 2 }],
     })
 
-    const { getByText, queryByText } = render(
+    render(
       <MockedProvider
         mocks={[mockAddItems, mockUpdateItem]}
         addTypename={false}
@@ -466,28 +451,21 @@ describe('OrderItems', () => {
       </MockedProvider>
     )
 
-    const addToCartButton = getByText(/add to cart/i)
+    const addToCartButton = screen.getByText(/add to cart/i)
 
-    act(() => {
-      fireEvent.click(addToCartButton)
-      runQueueTask()
-    })
+    fireEvent.click(addToCartButton)
 
-    // the item is added for a brief moment
-    await waitFor(() =>
-      expect(queryByText('St Tropez Top Shorts: 1')).toBeInTheDocument()
-    )
-
-    act(() => {
-      fireEvent.click(addToCartButton)
-      runQueueTask()
-      jest.runAllTimers()
-    })
+    await runQueueTaskWithFakeTimers()
 
     // the item is added for a brief moment
-    await waitFor(() =>
-      expect(queryByText('St Tropez Top Shorts: 2')).toBeInTheDocument()
-    )
+    expect(screen.queryByText('St Tropez Top Shorts: 1')).toBeInTheDocument()
+
+    fireEvent.click(addToCartButton)
+
+    await runQueueTaskWithFakeTimers()
+
+    // the item is added for a brief moment
+    expect(screen.queryByText('St Tropez Top Shorts: 2')).toBeInTheDocument()
   })
 
   it('should increment the quantity of an item already in the cart with different seller', async () => {
@@ -523,7 +501,7 @@ describe('OrderItems', () => {
           options: [],
         },
       ],
-      result: [{ ...mockItemSeller1, quantity: 1 }],
+      result: [{ ...mockItemSeller1, uniqueId: 'item-1', quantity: 1 }],
     })
 
     const mockAddItems2 = mockAddItemMutation({
@@ -535,15 +513,18 @@ describe('OrderItems', () => {
           options: [],
         },
       ],
-      result: [{ ...mockItemSeller2, quantity: 1 }],
+      result: [{ ...mockItemSeller2, uniqueId: 'item-2', quantity: 1 }],
     })
 
     const mockUpdateItem = mockUpdateItemMutation({
-      args: [{ uniqueId: mockCatalogItems[0].uniqueId, quantity: 2 }],
-      result: [{ ...mockCatalogItems[0], quantity: 2 }],
+      args: [{ uniqueId: 'item-2', quantity: 2 }],
+      result: [
+        { ...mockItemSeller1, uniqueId: 'item-1', quantity: 1 },
+        { ...mockItemSeller2, uniqueId: 'item-2', quantity: 2 },
+      ],
     })
 
-    const { getByText, queryAllByText, queryByText, debug } = render(
+    render(
       <MockedProvider
         mocks={[mockAddItems, mockAddItems2, mockUpdateItem]}
         addTypename={false}
@@ -560,42 +541,27 @@ describe('OrderItems', () => {
 
     itemsToAdd = [mockItemSeller1]
 
-    const addToCartButton = getByText(/add to cart/i)
+    const addToCartButton = screen.getByText(/add to cart/i)
 
     fireEvent.click(addToCartButton)
 
-    act(() => {
-      runQueueTask()
-    })
+    expect(screen.queryAllByText(/Tropez/)).toHaveLength(1)
 
-    // the item is added for a brief moment
-    await waitFor(() => {
-      expect(queryAllByText(/Tropez/)).toHaveLength(1)
-    })
+    await runQueueTaskWithFakeTimers()
 
     itemsToAdd = [mockItemSeller2]
 
     fireEvent.click(addToCartButton)
 
-    act(() => {
-      runQueueTask()
-    })
+    expect(screen.queryAllByText(/Tropez/)).toHaveLength(2)
 
-    await waitFor(() => {
-      expect(queryAllByText(/Tropez/)).toHaveLength(2)
-    })
+    await runQueueTaskWithFakeTimers()
 
     fireEvent.click(addToCartButton)
 
-    act(() => {
-      runQueueTask()
-      jest.runAllTimers()
-    })
+    await runQueueTaskWithFakeTimers()
 
-    // the item is added for a brief moment
-    await waitFor(() => {
-      expect(queryByText('St Tropez Top Shorts: 1')).toBeInTheDocument()
-      expect(queryByText('St Tropez Top Shorts: 2')).toBeInTheDocument()
-    })
+    expect(screen.queryByText('St Tropez Top Shorts: 1')).toBeInTheDocument()
+    expect(screen.queryByText('St Tropez Top Shorts: 2')).toBeInTheDocument()
   })
 })
