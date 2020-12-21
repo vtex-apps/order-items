@@ -485,6 +485,7 @@ interface SetManualPrice {
 interface UpdateItemsMutation {
   updateItems: OrderForm
 }
+
 const OrderItemsProvider: FC = ({ children }) => {
   const { orderForm, setOrderForm } = useOrderForm()
 
@@ -602,7 +603,8 @@ const OrderItemsProvider: FC = ({ children }) => {
           }
         }
 
-        const previousTask = localQueue[previousTaskIndex]
+        const previousTask =
+          previousTaskIndex === -1 ? undefined : localQueue[previousTaskIndex]
 
         const previousTaskItems =
           previousTask?.type === LocalOrderTaskType.UPDATE_MUTATION
