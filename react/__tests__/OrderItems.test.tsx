@@ -592,7 +592,7 @@ describe('OrderItems', () => {
       jest.runAllTimers()
     })
 
-    // // the item is added for a brief moment
+    // the item is added for a brief moment
     await waitFor(() => {
       expect(queryByText('St Tropez Top Shorts: 1')).toBeInTheDocument()
       expect(queryByText('St Tropez Top Shorts: 2')).toBeInTheDocument()

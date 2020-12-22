@@ -52,8 +52,6 @@ const isSameItem = (
     return isSameId && isSameSeller
   }
 
-  // TODO: maybe support comparing inputValues
-
   // does every option (assuming assembly option) existing in the cart as separate products?
   const optionsExistInCart = (input.options as AssemblyOptionInput[]).every(
     (opItem) => items.find((i) => i.id === opItem.id)
@@ -588,9 +586,12 @@ const OrderItemsProvider: FC = ({ children }) => {
         (acc, item) => {
           const { newItems: newList, updatedItems: updateList } = acc
 
-          const existingItem = orderFormItemsRef.current.find((i) =>
-            isSameItem(item, i, items)
-          )
+          // assembly items are always different
+          const isAssemblyItem = item.options && item.options.length > 0
+
+          const existingItem = isAssemblyItem
+            ? undefined
+            : orderFormItemsRef.current.find((i) => isSameItem(item, i, items))
 
           if (existingItem == null) {
             newList.push(item)
