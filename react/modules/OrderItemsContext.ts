@@ -3,7 +3,8 @@ import { useContext, createContext } from 'react'
 interface Context {
   addItem: (
     items: Array<Partial<CatalogItem>>,
-    marketingData?: Partial<MarketingData>
+    marketingData?: Partial<MarketingData>,
+    salesChannel?: string
   ) => void
   updateQuantity: (props: Partial<CatalogItem>) => void
   removeItem: (props: Partial<CatalogItem>) => void
