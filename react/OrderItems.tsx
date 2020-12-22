@@ -1,21 +1,22 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, { FC, useCallback, useMemo, useRef, useEffect } from 'react'
+import type { FC } from 'react'
+import React, { useCallback, useMemo, useRef, useEffect } from 'react'
 import { useMutation } from 'react-apollo'
 import UpdateItems from 'vtex.checkout-resources/MutationUpdateItems'
 import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
 import SetManualPrice from 'vtex.checkout-resources/MutationSetManualPrice'
-import { OrderForm, OrderQueue } from 'vtex.order-manager'
-import { Item, AssemblyOptionInput } from 'vtex.checkout-graphql'
+import { OrderForm, OrderQueue, constants } from 'vtex.order-manager'
+import type { Item, AssemblyOptionInput } from 'vtex.checkout-graphql'
 import { useSplunk } from 'vtex.checkout-splunk'
+import * as uuid from 'uuid'
 
 import { OrderItemsContext, useOrderItems } from './modules/OrderItemsContext'
+import type { UpdateQuantityInput } from './modules/localOrderQueue'
 import {
   LocalOrderTaskType,
   getLocalOrderQueue,
   popLocalOrderQueue,
   pushLocalOrderQueue,
   updateLocalQueueItemIds,
-  UpdateQuantityInput,
 } from './modules/localOrderQueue'
 import {
   adjustForItemInput,
@@ -136,6 +137,7 @@ const updateTotalizersAndValue = ({
 interface Task {
   execute: () => Promise<OrderForm>
   rollback?: () => void
+  id?: string
 }
 
 const useEnqueueTask = () => {
@@ -146,7 +148,7 @@ const useEnqueueTask = () => {
 
   const enqueueTask = useCallback<(task: Task) => PromiseLike<void>>(
     (task) =>
-      enqueue(task.execute).then(
+      enqueue(task.execute, task.id).then(
         (orderForm: OrderForm) => {
           popLocalOrderQueue()
           if (queueStatusRef.current === QueueStatus.FULFILLED) {
@@ -161,11 +163,13 @@ const useEnqueueTask = () => {
           }
         },
         (error: any) => {
-          popLocalOrderQueue()
+          if (error && error.code === constants.TASK_CANCELLED_CODE) {
+            popLocalOrderQueue(error.index)
 
-          if (error && error.code === 'TASK_CANCELLED') {
             return
           }
+
+          popLocalOrderQueue()
 
           logSplunk({
             type: 'Error',
@@ -341,11 +345,14 @@ const useUpdateItemsTask = (
     ({
       items,
       orderFormItems,
+      id,
     }: {
       items: UpdateQuantityInput[]
       orderFormItems: Item[]
+      id: string
     }) => {
       return {
+        id,
         execute: async () => {
           const mutationVariables = {
             orderItems: items.map((input) => {
@@ -478,6 +485,7 @@ interface SetManualPrice {
 interface UpdateItemsMutation {
   updateItems: OrderForm
 }
+
 const OrderItemsProvider: FC = ({ children }) => {
   const { orderForm, setOrderForm } = useOrderForm()
 
@@ -551,11 +559,81 @@ const OrderItemsProvider: FC = ({ children }) => {
         }
       })
 
-      const mutationVariables = {
-        orderItems: [{ uniqueId, quantity }],
+      let mutationVariables
+      let id = uuid.v4()
+
+      if (quantity > 0) {
+        const localQueue = getLocalOrderQueue().queue
+
+        let previousTaskIndex = -1
+        const originalId = id
+
+        // Skip the first element in the queue (which is currently being executed)
+        // because we can't cancel an in-progress task.
+        for (let i = 1; i < localQueue.length; i++) {
+          const task = localQueue[i]
+
+          if (
+            task.type === LocalOrderTaskType.UPDATE_MUTATION &&
+            task.variables.orderItems.every(
+              (itemInput) => itemInput.quantity > 0
+            )
+          ) {
+            // If we find an update-only mutation (without removed items)
+            // we will re-use it's id so we minimize the number of updates
+            // to send to the API
+            previousTaskIndex = i
+            id = task.id!
+          } else {
+            // If we find any other kind of request we need to reset our
+            // `previousTaskIndex` and `id` because we can't rely on the indexes
+            // of the operations done before this task. For example, assume the
+            // following cart:
+            //
+            //   [{ id: 1, quantity: 2 }, { id: 2, quantity: 3 }, { id: 3, quantity: 1 }]
+            //
+            // If we update the second item's quantity to 1, then remove the first
+            // item and update the third item quantity to 2, we can't "join" the first
+            // and last updates, because the indexes will have been shifted due to
+            // the second item being removed (and the API rely on the index of the items,
+            // even though we send the unique id). The same could happen if we add one
+            // item  and the cart isn't using the default "add_time" sort algorithm.
+            previousTaskIndex = -1
+            id = originalId
+          }
+        }
+
+        const previousTask =
+          previousTaskIndex === -1 ? undefined : localQueue[previousTaskIndex]
+
+        const previousTaskItems =
+          previousTask?.type === LocalOrderTaskType.UPDATE_MUTATION
+            ? previousTask.variables.orderItems
+            : []
+
+        const itemIndexInPreviousTask = previousTaskItems.findIndex(
+          (prevInput) =>
+            'uniqueId' in prevInput
+              ? prevInput.uniqueId === uniqueId
+              : prevInput.index === index
+        )
+
+        mutationVariables = {
+          orderItems:
+            itemIndexInPreviousTask > -1
+              ? previousTaskItems.map((prevInput, prevInputIndex) =>
+                  prevInputIndex === itemIndexInPreviousTask
+                    ? { uniqueId, quantity }
+                    : prevInput
+                )
+              : previousTaskItems.concat([{ uniqueId, quantity }]),
+        }
+      } else {
+        mutationVariables = { orderItems: [{ uniqueId, quantity }] }
       }
 
       pushLocalOrderQueue({
+        id,
         type: LocalOrderTaskType.UPDATE_MUTATION,
         variables: mutationVariables,
         orderFormItems: currentOrderFormItems,
@@ -565,6 +643,7 @@ const OrderItemsProvider: FC = ({ children }) => {
         updateItemsTask({
           items: mutationVariables.orderItems,
           orderFormItems: currentOrderFormItems,
+          id,
         })
       )
     },
@@ -616,7 +695,9 @@ const OrderItemsProvider: FC = ({ children }) => {
       }
 
       const mutationInputItems = newItems.map(adjustForItemInput)
-      const orderFormItems = newItems.map(mapToOrderFormItem)
+      const orderFormItems = newItems.map((cartItem, index) =>
+        mapToOrderFormItem(mutationInputItems[index], cartItem)
+      )
 
       setOrderForm((prevOrderForm) => {
         return {
@@ -693,6 +774,7 @@ const OrderItemsProvider: FC = ({ children }) => {
           updateItemsTask({
             items: task.variables.orderItems,
             orderFormItems: task.orderFormItems,
+            id: task.id!,
           })
         )
       }

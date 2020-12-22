@@ -16,7 +16,10 @@ export const adjustForItemInput = (
   }
 }
 
-export const mapToOrderFormItem = (cartItem: Partial<CatalogItem>): Item => {
+export const mapToOrderFormItem = (
+  itemInput: OrderFormItemInput,
+  cartItem: Partial<CatalogItem>
+): Item => {
   return {
     id: cartItem.id!,
     productId: cartItem.productId!,
@@ -33,7 +36,7 @@ export const mapToOrderFormItem = (cartItem: Partial<CatalogItem>): Item => {
     sellingPrice: cartItem.sellingPrice!,
     measurementUnit: cartItem.measurementUnit!,
     quantity: cartItem.quantity ?? 1,
-    uniqueId: cartItem?.uniqueId ?? uuid.v4(),
+    uniqueId: itemInput.uniqueId ?? uuid.v4(),
     detailUrl: cartItem.detailUrl!,
     availability: cartItem.availability ?? AVAILABLE,
     additionalInfo: cartItem.additionalInfo!,
@@ -43,6 +46,7 @@ export const mapToOrderFormItem = (cartItem: Partial<CatalogItem>): Item => {
     attachments: [],
     bundleItems: [],
     offerings: [],
+    priceTags: [],
   }
 }
 
