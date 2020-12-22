@@ -189,7 +189,11 @@ const useAddItemsTask = (
 ) => {
   const [mutateAddItem] = useMutation<
     { addToCart: OrderForm },
-    { items: OrderFormItemInput[]; marketingData?: Partial<MarketingData> }
+    {
+      items: OrderFormItemInput[]
+      marketingData?: Partial<MarketingData>
+      salesChannel?: string
+    }
   >(AddToCart)
 
   const { logSplunk } = useSplunk()
@@ -200,16 +204,19 @@ const useAddItemsTask = (
       mutationInputItems,
       mutationInputMarketingData,
       orderFormItems,
+      salesChannel,
     }: {
       mutationInputItems: OrderFormItemInput[]
       mutationInputMarketingData?: Partial<MarketingData>
       orderFormItems: Item[]
+      salesChannel?: string
     }) => ({
       execute: async () => {
         const { data, errors } = await mutateAddItem({
           variables: {
             items: mutationInputItems,
             marketingData: mutationInputMarketingData,
+            salesChannel,
           },
         })
 
@@ -578,7 +585,8 @@ const OrderItemsProvider: FC = ({ children }) => {
   const addItem = useCallback(
     (
       items: Array<Partial<CatalogItem>>,
-      marketingData?: Partial<MarketingData>
+      marketingData?: Partial<MarketingData>,
+      salesChannel?: string
     ) => {
       const { newItems, updatedItems } = items.reduce<
         Record<string, Array<Partial<CatalogItem>>>
@@ -644,6 +652,7 @@ const OrderItemsProvider: FC = ({ children }) => {
         variables: {
           items: mutationInputItems,
           marketingData,
+          salesChannel,
         },
         orderFormItems,
       })
@@ -653,6 +662,7 @@ const OrderItemsProvider: FC = ({ children }) => {
           mutationInputItems,
           mutationInputMarketingData: marketingData,
           orderFormItems,
+          salesChannel,
         })
       )
     },
@@ -686,6 +696,7 @@ const OrderItemsProvider: FC = ({ children }) => {
             mutationInputItems: task.variables.items,
             mutationInputMarketingData: task.variables.marketingData,
             orderFormItems: task.orderFormItems,
+            salesChannel: task.variables.salesChannel,
           })
         )
       } else if (task.type === LocalOrderTaskType.UPDATE_MUTATION) {

@@ -17,6 +17,7 @@ interface UpdateQuantityMutationVariables {
 interface AddItemMutationVariables {
   items: OrderFormItemInput[]
   marketingData?: Partial<MarketingData>
+  salesChannel?: string
 }
 
 type LocalOrderTask =
