@@ -547,12 +547,21 @@ const OrderItemsProvider: FC = ({ children }) => {
         return { uniqueId, quantity, index }
       })
 
-      if (
-        inputItems.some(({ quantity }) => quantity === 0) &&
-        inputItems.some(({ quantity }) => quantity > 0)
-      ) {
-        throw new Error('Cannot delete and update items at the same time.')
-      }
+      const [updateInput, removeInput] = inputItems.reduce<
+        [
+          Array<{ uniqueId: string; quantity: number; index: number }>,
+          Array<{ uniqueId: string; quantity: number; index: number }>
+        ]
+      >(
+        ([updateList, removeList], item) => {
+          if (item.quantity > 0) {
+            return [[...updateList, item], removeList]
+          }
+
+          return [updateList, [...removeList, item]]
+        },
+        [[], []]
+      )
 
       setOrderForm((prevOrderForm) => {
         const updatedItems = prevOrderForm.items.slice()
@@ -595,15 +604,17 @@ const OrderItemsProvider: FC = ({ children }) => {
         }
       })
 
-      let mutationVariables
+      let updateMutationVariables
+      let removeMutationVariables
 
-      let id = uuid.v4()
+      let updateId = uuid.v4()
+      const removeId = uuid.v4()
 
-      if (inputItems[0].quantity > 0) {
+      if (updateInput.length > 0) {
         const localQueue = getLocalOrderQueue().queue
 
         let previousTaskIndex = -1
-        const originalId = id
+        const originalId = updateId
 
         // Skip the first element in the queue (which is currently being executed)
         // because we can't cancel an in-progress task.
@@ -620,7 +631,7 @@ const OrderItemsProvider: FC = ({ children }) => {
             // we will re-use it's id so we minimize the number of updates
             // to send to the API
             previousTaskIndex = i
-            id = task.id!
+            updateId = task.id!
           } else {
             // If we find any other kind of request we need to reset our
             // `previousTaskIndex` and `id` because we can't rely on the indexes
@@ -636,7 +647,7 @@ const OrderItemsProvider: FC = ({ children }) => {
             // even though we send the unique id). The same could happen if we add one
             // item  and the cart isn't using the default "add_time" sort algorithm.
             previousTaskIndex = -1
-            id = originalId
+            updateId = originalId
           }
         }
 
@@ -649,47 +660,68 @@ const OrderItemsProvider: FC = ({ children }) => {
             : []
 
         const partialMutationInput = previousTaskItems.map((prevInput) => {
-          const itemIndexInNewInput = inputItems.findIndex((newInput) =>
+          const itemIndexInNewInput = updateInput.findIndex((newInput) =>
             'uniqueId' in prevInput
               ? prevInput.uniqueId === newInput.uniqueId
               : prevInput.index === newInput.index
           )
 
           if (itemIndexInNewInput > -1) {
-            return inputItems[itemIndexInNewInput]
+            return updateInput[itemIndexInNewInput]
           }
 
           return prevInput
         })
 
-        mutationVariables = {
+        updateMutationVariables = {
           orderItems: partialMutationInput.concat(
-            inputItems.filter((input) => !partialMutationInput.includes(input))
+            updateInput.filter((input) => !partialMutationInput.includes(input))
           ),
         }
-      } else {
-        mutationVariables = {
-          orderItems: inputItems.map(({ quantity, uniqueId }) => ({
+      }
+
+      if (removeInput.length > 0) {
+        removeMutationVariables = {
+          orderItems: removeInput.map(({ quantity, uniqueId }) => ({
             quantity,
             uniqueId,
           })),
         }
       }
 
-      pushLocalOrderQueue({
-        id,
-        type: LocalOrderTaskType.UPDATE_MUTATION,
-        variables: mutationVariables,
-        orderFormItems: currentOrderFormItems,
-      })
-
-      enqueueTask(
-        updateItemsTask({
-          items: mutationVariables.orderItems,
+      if (updateMutationVariables) {
+        pushLocalOrderQueue({
+          id: updateId,
+          type: LocalOrderTaskType.UPDATE_MUTATION,
+          variables: updateMutationVariables,
           orderFormItems: currentOrderFormItems,
-          id,
         })
-      )
+
+        enqueueTask(
+          updateItemsTask({
+            items: updateMutationVariables.orderItems,
+            orderFormItems: currentOrderFormItems,
+            id: updateId,
+          })
+        )
+      }
+
+      if (removeMutationVariables) {
+        pushLocalOrderQueue({
+          id: removeId,
+          type: LocalOrderTaskType.UPDATE_MUTATION,
+          variables: removeMutationVariables,
+          orderFormItems: currentOrderFormItems,
+        })
+
+        enqueueTask(
+          updateItemsTask({
+            items: removeMutationVariables.orderItems,
+            orderFormItems: currentOrderFormItems,
+            id: removeId,
+          })
+        )
+      }
     },
     [enqueueTask, setOrderForm, updateItemsTask]
   )
