@@ -509,67 +509,97 @@ const OrderItemsProvider: FC = ({ children }) => {
     orderFormItemsRef.current = orderForm.items
   }, [orderForm.items])
 
-  const updateQuantity = useCallback(
-    (input) => {
-      let index: number
-      let uniqueId = ''
+  const updateItems = useCallback(
+    (items: Array<Partial<CatalogItem>>) => {
+      if (!items.length) {
+        return
+      }
 
       const currentOrderFormItems = orderFormItemsRef.current
 
-      if (input.id) {
-        index = currentOrderFormItems.findIndex((orderItem) =>
-          isSameItem(input, orderItem, currentOrderFormItems)
-        )
-      } else if ('uniqueId' in input) {
-        uniqueId = input.uniqueId
-        index = currentOrderFormItems.findIndex(
-          (orderItem) => orderItem.uniqueId === input.uniqueId
-        )
-      } else {
-        index = input?.index ?? -1
-      }
+      const inputItems = items.map((input) => {
+        let index: number
+        let uniqueId = ''
 
-      if (index < 0 || index >= currentOrderFormItems.length) {
-        throw new Error(`Item ${input.id || input.uniqueId} not found`)
-      }
+        if (input.id) {
+          index = currentOrderFormItems.findIndex((orderItem) =>
+            isSameItem(input, orderItem, currentOrderFormItems)
+          )
+        } else if ('uniqueId' in input) {
+          uniqueId = input.uniqueId!
+          index = currentOrderFormItems.findIndex(
+            (orderItem) => orderItem.uniqueId === input.uniqueId
+          )
+        } else {
+          index = input?.index ?? -1
+        }
 
-      if (!uniqueId) {
-        uniqueId = currentOrderFormItems[index].uniqueId
-      }
+        if (index < 0 || index >= currentOrderFormItems.length) {
+          throw new Error(`Item ${input.id || input.uniqueId} not found`)
+        }
 
-      const quantity = input.quantity ?? 1
+        if (!uniqueId) {
+          uniqueId = currentOrderFormItems[index].uniqueId
+        }
+
+        const quantity = input.quantity ?? 1
+
+        return { uniqueId, quantity, index }
+      })
+
+      if (
+        inputItems.some(({ quantity }) => quantity === 0) &&
+        inputItems.some(({ quantity }) => quantity > 0)
+      ) {
+        throw new Error('Cannot delete and update items at the same time.')
+      }
 
       setOrderForm((prevOrderForm) => {
         const updatedItems = prevOrderForm.items.slice()
 
-        const oldItem = updatedItems[index]
-        const newItem = {
-          ...oldItem,
-          quantity,
-        }
+        let totalizers = prevOrderForm.totalizers as Totalizer[]
+        let { value } = prevOrderForm
 
-        if (quantity > 0) {
-          updatedItems[index] = newItem
-        } else {
-          updatedItems.splice(index, 1)
-        }
+        inputItems.forEach(({ index, quantity }) => {
+          const oldItem = updatedItems[index]
+          const newItem = {
+            ...oldItem,
+            quantity,
+          }
+
+          if (quantity > 0) {
+            updatedItems[index] = newItem
+          } else {
+            updatedItems.splice(index, 1)
+          }
+
+          const {
+            totalizers: updatedTotalizers,
+            value: updatedValue,
+          } = updateTotalizersAndValue({
+            totalizers,
+            currentValue: value,
+            newItem,
+            oldItem,
+          })
+
+          totalizers = updatedTotalizers
+          value = updatedValue
+        })
 
         return {
           ...prevOrderForm,
-          ...updateTotalizersAndValue({
-            totalizers: prevOrderForm.totalizers as Totalizer[],
-            currentValue: prevOrderForm.value,
-            newItem,
-            oldItem,
-          }),
+          totalizers,
+          value,
           items: updatedItems,
         }
       })
 
       let mutationVariables
+
       let id = uuid.v4()
 
-      if (quantity > 0) {
+      if (inputItems[0].quantity > 0) {
         const localQueue = getLocalOrderQueue().queue
 
         let previousTaskIndex = -1
@@ -618,25 +648,32 @@ const OrderItemsProvider: FC = ({ children }) => {
             ? previousTask.variables.orderItems
             : []
 
-        const itemIndexInPreviousTask = previousTaskItems.findIndex(
-          (prevInput) =>
+        const partialMutationInput = previousTaskItems.map((prevInput) => {
+          const itemIndexInNewInput = inputItems.findIndex((newInput) =>
             'uniqueId' in prevInput
-              ? prevInput.uniqueId === uniqueId
-              : prevInput.index === index
-        )
+              ? prevInput.uniqueId === newInput.uniqueId
+              : prevInput.index === newInput.index
+          )
+
+          if (itemIndexInNewInput > -1) {
+            return inputItems[itemIndexInNewInput]
+          }
+
+          return prevInput
+        })
 
         mutationVariables = {
-          orderItems:
-            itemIndexInPreviousTask > -1
-              ? previousTaskItems.map((prevInput, prevInputIndex) =>
-                  prevInputIndex === itemIndexInPreviousTask
-                    ? { uniqueId, quantity }
-                    : prevInput
-                )
-              : previousTaskItems.concat([{ uniqueId, quantity }]),
+          orderItems: partialMutationInput.concat(
+            inputItems.filter((input) => !partialMutationInput.includes(input))
+          ),
         }
       } else {
-        mutationVariables = { orderItems: [{ uniqueId, quantity }] }
+        mutationVariables = {
+          orderItems: inputItems.map(({ quantity, uniqueId }) => ({
+            quantity,
+            uniqueId,
+          })),
+        }
       }
 
       pushLocalOrderQueue({
@@ -695,7 +732,7 @@ const OrderItemsProvider: FC = ({ children }) => {
       )
 
       if (updatedItems.length) {
-        updatedItems.forEach((item) => updateQuantity(item))
+        updateItems(updatedItems)
       }
 
       if (newItems.length === 0) {
@@ -747,7 +784,7 @@ const OrderItemsProvider: FC = ({ children }) => {
         })
       )
     },
-    [addItemsTask, enqueueTask, setOrderForm, updateQuantity]
+    [addItemsTask, enqueueTask, setOrderForm, updateItems]
   )
 
   const setManualPrice = useCallback(
@@ -757,14 +794,25 @@ const OrderItemsProvider: FC = ({ children }) => {
     [enqueueTask, setManualPriceTask]
   )
 
+  const updateQuantity = useCallback(
+    (props: Partial<CatalogItem>) => updateItems([props]),
+    [updateItems]
+  )
+
   const removeItem = useCallback(
-    (props: Partial<Item>) => updateQuantity({ ...props, quantity: 0 }),
-    [updateQuantity]
+    (props: Partial<CatalogItem>) => updateItems([{ ...props, quantity: 0 }]),
+    [updateItems]
   )
 
   const value = useMemo(
-    () => ({ addItem, updateQuantity, removeItem, setManualPrice }),
-    [addItem, updateQuantity, removeItem, setManualPrice]
+    () => ({
+      addItem,
+      updateQuantity,
+      updateItems,
+      removeItem,
+      setManualPrice,
+    }),
+    [addItem, updateQuantity, updateItems, removeItem, setManualPrice]
   )
 
   useEffect(() => {
