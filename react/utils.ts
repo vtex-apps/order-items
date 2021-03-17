@@ -9,7 +9,6 @@ export const adjustForItemInput = (
 ): OrderFormItemInput => {
   return {
     id: +(item.id ?? 0),
-    index: item.index,
     quantity: item.quantity,
     seller: item.seller,
     options: item.options,
