@@ -521,17 +521,17 @@ const OrderItemsProvider: FC = ({ children }) => {
         let index: number
         let uniqueId = ''
 
-        if (input.id) {
+        if ('index' in input) {
+          index = input?.index ?? -1
+        } else if (input.id) {
           index = currentOrderFormItems.findIndex((orderItem) =>
             isSameItem(input, orderItem, currentOrderFormItems)
           )
-        } else if ('uniqueId' in input) {
+        } else {
           uniqueId = input.uniqueId!
           index = currentOrderFormItems.findIndex(
             (orderItem) => orderItem.uniqueId === input.uniqueId
           )
-        } else {
-          index = input?.index ?? -1
         }
 
         if (index < 0 || index >= currentOrderFormItems.length) {
@@ -549,8 +549,8 @@ const OrderItemsProvider: FC = ({ children }) => {
 
       const [updateInput, removeInput] = inputItems.reduce<
         [
-          Array<{ uniqueId: string; quantity: number; index: number }>,
-          Array<{ uniqueId: string; quantity: number; index: number }>
+          Array<{ uniqueId?: string; quantity: number; index: number }>,
+          Array<{ uniqueId?: string; quantity: number; index: number }>
         ]
       >(
         ([updateList, removeList], item) => {
@@ -569,32 +569,34 @@ const OrderItemsProvider: FC = ({ children }) => {
         let totalizers = prevOrderForm.totalizers as Totalizer[]
         let { value } = prevOrderForm
 
-        inputItems.forEach(({ index, quantity }) => {
-          const oldItem = updatedItems[index]
-          const newItem = {
-            ...oldItem,
-            quantity,
-          }
+        inputItems
+          .sort((itemA, itemB) => itemB.index - itemA.index)
+          .forEach(({ index, quantity }) => {
+            const oldItem = updatedItems[index]
+            const newItem = {
+              ...oldItem,
+              quantity,
+            }
 
-          if (quantity > 0) {
-            updatedItems[index] = newItem
-          } else {
-            updatedItems.splice(index, 1)
-          }
+            if (quantity > 0) {
+              updatedItems[index] = newItem
+            } else {
+              updatedItems.splice(index, 1)
+            }
 
-          const {
-            totalizers: updatedTotalizers,
-            value: updatedValue,
-          } = updateTotalizersAndValue({
-            totalizers,
-            currentValue: value,
-            newItem,
-            oldItem,
+            const {
+              totalizers: updatedTotalizers,
+              value: updatedValue,
+            } = updateTotalizersAndValue({
+              totalizers,
+              currentValue: value,
+              newItem,
+              oldItem,
+            })
+
+            totalizers = updatedTotalizers
+            value = updatedValue
           })
-
-          totalizers = updatedTotalizers
-          value = updatedValue
-        })
 
         return {
           ...prevOrderForm,
@@ -604,13 +606,9 @@ const OrderItemsProvider: FC = ({ children }) => {
         }
       })
 
-      let updateMutationVariables
-      let removeMutationVariables
+      if (updateInput.length > 0 && removeInput.length === 0) {
+        let updateId = uuid.v4()
 
-      let updateId = uuid.v4()
-      const removeId = uuid.v4()
-
-      if (updateInput.length > 0) {
         const localQueue = getLocalOrderQueue().queue
 
         let previousTaskIndex = -1
@@ -667,29 +665,27 @@ const OrderItemsProvider: FC = ({ children }) => {
           )
 
           if (itemIndexInNewInput > -1) {
-            return updateInput[itemIndexInNewInput]
+            const input = updateInput[itemIndexInNewInput]
+
+            delete input.uniqueId
+
+            return input
           }
 
           return prevInput
         })
 
-        updateMutationVariables = {
+        const updateMutationVariables = {
           orderItems: partialMutationInput.concat(
-            updateInput.filter((input) => !partialMutationInput.includes(input))
+            updateInput
+              .filter((input) => !partialMutationInput.includes(input))
+              .map((input) => ({
+                quantity: input.quantity,
+                index: input.index,
+              }))
           ),
         }
-      }
 
-      if (removeInput.length > 0) {
-        removeMutationVariables = {
-          orderItems: removeInput.map(({ quantity, uniqueId }) => ({
-            quantity,
-            uniqueId,
-          })),
-        }
-      }
-
-      if (updateMutationVariables) {
         pushLocalOrderQueue({
           id: updateId,
           type: LocalOrderTaskType.UPDATE_MUTATION,
@@ -706,22 +702,35 @@ const OrderItemsProvider: FC = ({ children }) => {
         )
       }
 
-      if (removeMutationVariables) {
-        pushLocalOrderQueue({
-          id: removeId,
-          type: LocalOrderTaskType.UPDATE_MUTATION,
-          variables: removeMutationVariables,
-          orderFormItems: currentOrderFormItems,
-        })
-
-        enqueueTask(
-          updateItemsTask({
-            items: removeMutationVariables.orderItems,
-            orderFormItems: currentOrderFormItems,
-            id: removeId,
-          })
-        )
+      if (removeInput.length === 0) {
+        return
       }
+
+      const removeMutationVariables = {
+        orderItems: removeInput
+          .concat(updateInput)
+          .map(({ quantity, index }) => ({
+            quantity,
+            index,
+          })),
+      }
+
+      const id = uuid.v4()
+
+      pushLocalOrderQueue({
+        id,
+        type: LocalOrderTaskType.UPDATE_MUTATION,
+        variables: removeMutationVariables,
+        orderFormItems: currentOrderFormItems,
+      })
+
+      enqueueTask(
+        updateItemsTask({
+          items: removeMutationVariables.orderItems,
+          orderFormItems: currentOrderFormItems,
+          id,
+        })
+      )
     },
     [enqueueTask, setOrderForm, updateItemsTask]
   )
