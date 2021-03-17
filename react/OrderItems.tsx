@@ -700,6 +700,8 @@ const OrderItemsProvider: FC = ({ children }) => {
             id,
           })
         )
+
+        return
       }
 
       if (removeInput.length === 0) {
