@@ -607,12 +607,12 @@ const OrderItemsProvider: FC = ({ children }) => {
       })
 
       if (updateInput.length > 0 && removeInput.length === 0) {
-        let updateId = uuid.v4()
+        let id = uuid.v4()
 
         const localQueue = getLocalOrderQueue().queue
 
         let previousTaskIndex = -1
-        const originalId = updateId
+        const originalId = id
 
         // Skip the first element in the queue (which is currently being executed)
         // because we can't cancel an in-progress task.
@@ -629,7 +629,7 @@ const OrderItemsProvider: FC = ({ children }) => {
             // we will re-use it's id so we minimize the number of updates
             // to send to the API
             previousTaskIndex = i
-            updateId = task.id!
+            id = task.id!
           } else {
             // If we find any other kind of request we need to reset our
             // `previousTaskIndex` and `id` because we can't rely on the indexes
@@ -645,7 +645,7 @@ const OrderItemsProvider: FC = ({ children }) => {
             // even though we send the unique id). The same could happen if we add one
             // item  and the cart isn't using the default "add_time" sort algorithm.
             previousTaskIndex = -1
-            updateId = originalId
+            id = originalId
           }
         }
 
@@ -687,7 +687,7 @@ const OrderItemsProvider: FC = ({ children }) => {
         }
 
         pushLocalOrderQueue({
-          id: updateId,
+          id,
           type: LocalOrderTaskType.UPDATE_MUTATION,
           variables: updateMutationVariables,
           orderFormItems: currentOrderFormItems,
@@ -697,7 +697,7 @@ const OrderItemsProvider: FC = ({ children }) => {
           updateItemsTask({
             items: updateMutationVariables.orderItems,
             orderFormItems: currentOrderFormItems,
-            id: updateId,
+            id,
           })
         )
       }
