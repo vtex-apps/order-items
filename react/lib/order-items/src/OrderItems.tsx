@@ -1,4 +1,3 @@
-import { FC } from 'react';
 import React, {
   useCallback,
   useMemo,
@@ -9,11 +8,6 @@ import React, {
 import AgnosticOrderForm from '@vtex/order-manager/src/OrderForm';
 import OrderQueue from '@vtex/order-manager/src/OrderQueue';
 import constants from '@vtex/order-manager/src/constants';
-// import {
-//   OrderForm as AgnosticOrderForm,
-//   OrderQueue,
-//   constants,
-// } from 'vtex.order-manager';
 import { useSplunk } from 'vtex.checkout-splunk';
 import * as uuid from 'uuid';
 import { OrderItemsContext, useOrderItems } from './modules/OrderItemsContext';
@@ -334,7 +328,9 @@ const useAddItemsTask = (mutateAddItem: addItemMutate<GraphQLResult>) => (
   return addItemTask;
 };
 
-const useSetManualPrice = (mutateSetManualPrice: any) => () => {
+const useSetManualPrice = (
+  mutateSetManualPrice: updateManualPriceMutate<GraphQLResult>
+) => () => {
   const setManualPriceTask = useCallback(
     (price: number, itemIndex: number) => {
       return {
@@ -497,7 +493,11 @@ const useFakeUniqueIdMap = () => {
 };
 
 type GraphQLResult = {
-  data?: { addToCart?: OrderForm; updateItems?: OrderForm };
+  data?: {
+    addToCart?: OrderForm;
+    updateItems?: OrderForm;
+    setManualPrice?: OrderForm;
+  };
   errors?: any;
 };
 
@@ -509,18 +509,14 @@ type updateItemMutate<T extends GraphQLResult> = (input: {
   variables: UpdateQuantityMutationVariables;
 }) => Promise<T | undefined>;
 
-type updateManualPriceMutate = ({
-  variables: {
-    manualPriceInput: { itemIndex, price },
-  },
-}: {
-  variables: { manualPriceInput: { itemIndex: number; price: number } };
-}) => Promise<{ data?: any; errors?: any }>;
+type updateManualPriceMutate<T extends GraphQLResult> = (input: {
+  variables: UpdateQuantityMutationVariables;
+}) => Promise<T | undefined>;
 
 export interface OrderItemsProviderProps {
   handleUpdateQuantity: updateItemMutate<GraphQLResult>;
   handleAddItem: addItemMutate<GraphQLResult>;
-  handleUpdateManualPrice: updateManualPriceMutate;
+  handleUpdateManualPrice: updateManualPriceMutate<GraphQLResult>;
 }
 
 const OrderItemsProvider = ({
@@ -620,7 +616,7 @@ const OrderItemsProvider = ({
           const task = localQueue[i];
 
           if (
-            task.type === LocalOrderTaskType.UPDATE_MUTATION &&
+            task.type === 'update_mutation' &&
             task.variables.orderItems.every(
               (itemInput) => itemInput.quantity > 0
             )
@@ -653,7 +649,7 @@ const OrderItemsProvider = ({
           previousTaskIndex === -1 ? undefined : localQueue[previousTaskIndex];
 
         const previousTaskItems =
-          previousTask?.type === LocalOrderTaskType.UPDATE_MUTATION
+          previousTask?.type === 'update_mutation'
             ? previousTask.variables.orderItems
             : [];
 
@@ -680,7 +676,7 @@ const OrderItemsProvider = ({
 
       pushLocalOrderQueue({
         id,
-        type: LocalOrderTaskType.UPDATE_MUTATION,
+        type: 'update_mutation',
         variables: mutationVariables,
         orderFormItems: currentOrderFormItems,
       });
@@ -768,7 +764,7 @@ const OrderItemsProvider = ({
       });
 
       pushLocalOrderQueue({
-        type: LocalOrderTaskType.ADD_MUTATION,
+        type: 'add_mutation',
         variables: {
           items: mutationInputItems,
           marketingData,
@@ -812,7 +808,7 @@ const OrderItemsProvider = ({
     const localOrderQueue = getLocalOrderQueue();
 
     localOrderQueue.queue.forEach((task) => {
-      if (task.type === LocalOrderTaskType.ADD_MUTATION) {
+      if (task.type === 'add_mutation') {
         enqueueTask(
           addItemsTask({
             mutationInputItems: task.variables.items,
@@ -821,7 +817,7 @@ const OrderItemsProvider = ({
             salesChannel: task.variables.salesChannel,
           })
         );
-      } else if (task.type === LocalOrderTaskType.UPDATE_MUTATION) {
+      } else if (task.type === 'update_mutation') {
         enqueueTask(
           updateItemsTask({
             items: task.variables.orderItems,
@@ -841,4 +837,3 @@ const OrderItemsProvider = ({
 };
 
 export { OrderItemsProvider, useOrderItems };
-export default { OrderItemsProvider, useOrderItems };

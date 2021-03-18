@@ -8,7 +8,7 @@ import SetManualPrice from 'vtex.checkout-resources/MutationSetManualPrice'
 import { useOrderItems } from './lib/order-items/src/modules/OrderItemsContext'
 import { OrderItemsProvider as AgnosticOrderItemsProvider } from './lib/order-items/src/OrderItems'
 
-// import { OrderForm } from './lib/order-items/types'
+import { OrderForm, OrderFormItemInput } from './lib/order-items/types'
 
 interface SetManualPrice {
   setManualPrice: OrderForm
