@@ -14,7 +14,7 @@
     "strictFunctionTypes": true,
     "strictNullChecks": true,
     "strictPropertyInitialization": true,
-    "target": "esnext",
+    "target": "es2017",
     "typeRoots": ["node_modules/@types"],
     "types": ["node", "jest"]
   },
