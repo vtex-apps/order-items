@@ -6,9 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Support for `allowedOutdatedData` in `addItems` and `updateItems` functions.
 
 ## [0.11.1] - 2021-04-13
-
 ### Added
 - Do not consider as the same in the minicart a gift and a paid item that are the same.
 
