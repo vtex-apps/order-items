@@ -4,7 +4,7 @@ import UpdateItems from 'vtex.checkout-resources/MutationUpdateItems'
 import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
 import SetManualPrice from 'vtex.checkout-resources/MutationSetManualPrice'
 import { OrderForm, OrderQueue } from 'vtex.order-manager'
-import { createOrderItemsProvider } from '@vtex/order-items'
+import { createOrderItemsProvider, useOrderItems } from '@vtex/order-items'
 
 const { useOrderForm } = OrderForm
 const { useOrderQueue, useQueueStatus } = OrderQueue
@@ -54,7 +54,7 @@ function useMutateUpdateQuantity() {
   )
 }
 
-const { OrderItemsProvider, useOrderItems } = createOrderItemsProvider({
+const { OrderItemsProvider } = createOrderItemsProvider({
   useMutateUpdateQuantity,
   useMutateSetManualPrice,
   useMutateAddItems,
