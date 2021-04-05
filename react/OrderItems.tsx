@@ -34,6 +34,14 @@ const enum Totalizers {
   DISCOUNT = 'Discounts',
 }
 
+interface AddItemOptions {
+  allowedOutdatedData?: string[]
+}
+
+interface UpdateItemOptions {
+  allowedOutdatedData?: string[]
+}
+
 const isSameItem = (
   input: Partial<CatalogItem> | Item | OrderFormItemInput,
   item: Item,
@@ -218,13 +226,13 @@ const useAddItemsTask = (
       mutationInputMarketingData,
       orderFormItems,
       salesChannel,
-      allowedOutdatedData,
+      options,
     }: {
       mutationInputItems: OrderFormItemInput[]
       mutationInputMarketingData?: Partial<MarketingData>
       orderFormItems: Item[]
       salesChannel?: string
-      allowedOutdatedData?: string[]
+      options?: AddItemOptions
     }) => ({
       execute: async () => {
         const { data, errors } = await mutateAddItem({
@@ -232,7 +240,7 @@ const useAddItemsTask = (
             items: mutationInputItems,
             marketingData: mutationInputMarketingData,
             salesChannel,
-            allowedOutdatedData,
+            allowedOutdatedData: options?.allowedOutdatedData,
           },
         })
 
@@ -365,12 +373,12 @@ const useUpdateItemsTask = (
       items,
       orderFormItems,
       id,
-      allowedOutdatedData = undefined,
+      options,
     }: {
       items: UpdateQuantityInput[]
       orderFormItems: Item[]
       id: string
-      allowedOutdatedData?: string[]
+      options?: UpdateItemOptions
     }) => {
       return {
         id,
@@ -394,7 +402,7 @@ const useUpdateItemsTask = (
 
               return input
             }),
-            allowedOutdatedData,
+            allowedOutdatedData: options?.allowedOutdatedData,
           }
 
           const { data, errors } = await mutateUpdateQuantity({
@@ -525,7 +533,7 @@ const OrderItemsProvider: FC = ({ children }) => {
   }, [orderForm.items])
 
   const updateQuantity = useCallback(
-    (input, allowedOutdatedData = undefined) => {
+    (input, options?: UpdateItemOptions) => {
       let index: number
       let uniqueId = ''
 
@@ -641,7 +649,7 @@ const OrderItemsProvider: FC = ({ children }) => {
         )
 
         mutationVariables = {
-          allowedOutdatedData,
+          allowedOutdatedData: options?.allowedOutdatedData,
           orderItems:
             itemIndexInPreviousTask > -1
               ? previousTaskItems.map((prevInput, prevInputIndex) =>
@@ -653,7 +661,7 @@ const OrderItemsProvider: FC = ({ children }) => {
         }
       } else {
         mutationVariables = {
-          allowedOutdatedData,
+          allowedOutdatedData: options?.allowedOutdatedData,
           orderItems: [{ uniqueId, quantity }],
         }
       }
@@ -670,7 +678,7 @@ const OrderItemsProvider: FC = ({ children }) => {
           items: mutationVariables.orderItems,
           orderFormItems: currentOrderFormItems,
           id,
-          allowedOutdatedData,
+          options,
         })
       )
     },
@@ -686,7 +694,7 @@ const OrderItemsProvider: FC = ({ children }) => {
       items: Array<Partial<CatalogItem>>,
       marketingData?: Partial<MarketingData>,
       salesChannel?: string,
-      allowedOutdatedData?: string[]
+      options?: AddItemOptions
     ) => {
       const { newItems, updatedItems } = items.reduce<
         Record<string, Array<Partial<CatalogItem>>>
@@ -716,9 +724,7 @@ const OrderItemsProvider: FC = ({ children }) => {
       )
 
       if (updatedItems.length) {
-        updatedItems.forEach((item) =>
-          updateQuantity(item, allowedOutdatedData)
-        )
+        updatedItems.forEach((item) => updateQuantity(item, options))
       }
 
       if (newItems.length === 0) {
@@ -757,7 +763,7 @@ const OrderItemsProvider: FC = ({ children }) => {
           items: mutationInputItems,
           marketingData,
           salesChannel,
-          allowedOutdatedData,
+          allowedOutdatedData: options?.allowedOutdatedData,
         },
         orderFormItems,
       })
@@ -768,7 +774,7 @@ const OrderItemsProvider: FC = ({ children }) => {
           mutationInputMarketingData: marketingData,
           orderFormItems,
           salesChannel,
-          allowedOutdatedData,
+          options,
         })
       )
     },
@@ -783,8 +789,8 @@ const OrderItemsProvider: FC = ({ children }) => {
   )
 
   const removeItem = useCallback(
-    (props: Partial<Item>, allowedOutdatedData?: string[]) =>
-      updateQuantity({ ...props, quantity: 0 }, allowedOutdatedData),
+    (props: Partial<Item>, options?: UpdateItemOptions) =>
+      updateQuantity({ ...props, quantity: 0 }, options),
     [updateQuantity]
   )
 
@@ -804,7 +810,9 @@ const OrderItemsProvider: FC = ({ children }) => {
             mutationInputMarketingData: task.variables.marketingData,
             orderFormItems: task.orderFormItems,
             salesChannel: task.variables.salesChannel,
-            allowedOutdatedData: task.variables.allowedOutdatedData,
+            options: {
+              allowedOutdatedData: task.variables.allowedOutdatedData,
+            },
           })
         )
       } else if (task.type === LocalOrderTaskType.UPDATE_MUTATION) {
@@ -813,7 +821,9 @@ const OrderItemsProvider: FC = ({ children }) => {
             items: task.variables.orderItems,
             orderFormItems: task.orderFormItems,
             id: task.id!,
-            allowedOutdatedData: task.variables.allowedOutdatedData,
+            options: {
+              allowedOutdatedData: task.variables.allowedOutdatedData,
+            },
           })
         )
       }
