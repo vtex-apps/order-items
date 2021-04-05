@@ -6900,9 +6900,9 @@ verror@1.10.0:
   version "0.1.0"
   resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.checkout-splunk@0.1.0/public/@types/vtex.checkout-splunk#d5670aa05efa8b7d4ee58750506d7e0ece85b8c8"
 
-"vtex.order-manager@https://ompackage--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.order-manager@0.9.0+build1617286960/public/@types/vtex.order-manager":
+"vtex.order-manager@https://ompackage--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.order-manager@0.9.0+build1617612942/public/@types/vtex.order-manager":
   version "0.9.0"
-  resolved "https://ompackage--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.order-manager@0.9.0+build1617286960/public/@types/vtex.order-manager#08ac8ceff4cf94517cf3b76257b5a0b371a3fb59"
+  resolved "https://ompackage--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.order-manager@0.9.0+build1617612942/public/@types/vtex.order-manager#bda5b4579481cdfb853ef622a869442223df8223"
 
 "vtex.render-runtime@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.128.2/public/@types/vtex.render-runtime":
   version "8.128.2"
