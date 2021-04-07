@@ -42,6 +42,15 @@ const isSameItem = (
   const isSameId = input.id?.toString() === item.id
   const isSameSeller = input.seller === item.seller
 
+  /**
+   * If item is a gift, it should not be considered as the same item of the added one,
+   * otherwise buyer will not see two different products in the cart (the gift and the paid one)
+   *  */
+  // @ts-expect-error isGift has to be typed on vtex.checkout-graphql
+  if (item.isGift) {
+    return false
+  }
+
   // input has no options
   if (input.options == null) {
     // and the comparing item has, not the same item
