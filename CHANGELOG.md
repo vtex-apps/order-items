@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+- Do not consider as the same in the minicart a gift and a paid item that are the same.
+
 ## [0.11.0] - 2020-12-23
 ### Added
 - Support for `salesChannel` in `addItems` function.
