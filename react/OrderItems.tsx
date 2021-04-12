@@ -46,7 +46,6 @@ const isSameItem = (
    * If item is a gift, it should not be considered as the same item of the added one,
    * otherwise buyer will not see two different products in the cart (the gift and the paid one)
    *  */
-  // @ts-expect-error isGift has to be typed on vtex.checkout-graphql
   if (item.isGift) {
     return false
   }
