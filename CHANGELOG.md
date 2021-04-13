@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.11.1] - 2021-04-13
+
 ### Added
 - Do not consider as the same in the minicart a gift and a paid item that are the same.
 
