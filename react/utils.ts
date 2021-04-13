@@ -47,6 +47,7 @@ export const mapToOrderFormItem = (
     bundleItems: [],
     offerings: [],
     priceTags: [],
+    isGift: false,
   }
 }
 
