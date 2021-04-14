@@ -25,6 +25,7 @@ export const mockOrderForm = Object.freeze({
       bundleItems: [],
       offerings: [],
       priceTags: [],
+      isGift: false,
     },
     {
       additionalInfo: {
@@ -51,6 +52,7 @@ export const mockOrderForm = Object.freeze({
       bundleItems: [],
       offerings: [],
       priceTags: [],
+      isGift: false,
     },
     {
       additionalInfo: {
@@ -77,6 +79,7 @@ export const mockOrderForm = Object.freeze({
       bundleItems: [],
       offerings: [],
       priceTags: [],
+      isGift: false,
     },
   ],
   marketingData: null,
@@ -225,6 +228,7 @@ export const mockItemSeller1 = {
   imageUrl:
     'https://storecomponents.vtexassets.com/arquivos/ids/155488-500-auto?width=500&height=auto&aspect=true',
   options: [],
+  isGift: false,
 }
 
 export const mockItemSeller2 = {
