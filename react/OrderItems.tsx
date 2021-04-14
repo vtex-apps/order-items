@@ -9,7 +9,12 @@ import type { Item, AssemblyOptionInput } from 'vtex.checkout-graphql'
 import { useSplunk } from 'vtex.checkout-splunk'
 import * as uuid from 'uuid'
 
-import { OrderItemsContext, useOrderItems } from './modules/OrderItemsContext'
+import {
+  OrderItemsContext,
+  useOrderItems,
+  AddItemsOptions,
+  UpdateItemOptions,
+} from './modules/OrderItemsContext'
 import type { UpdateQuantityInput } from './modules/localOrderQueue'
 import {
   LocalOrderTaskType,
@@ -32,14 +37,6 @@ const { useOrderQueue, useQueueStatus, QueueStatus } = OrderQueue
 const enum Totalizers {
   SUBTOTAL = 'Items',
   DISCOUNT = 'Discounts',
-}
-
-interface AddItemOptions {
-  allowedOutdatedData?: string[]
-}
-
-interface UpdateItemOptions {
-  allowedOutdatedData?: string[]
 }
 
 const isSameItem = (
@@ -232,7 +229,7 @@ const useAddItemsTask = (
       mutationInputMarketingData?: Partial<MarketingData>
       orderFormItems: Item[]
       salesChannel?: string
-      options?: AddItemOptions
+      options?: AddItemsOptions
     }) => ({
       execute: async () => {
         const { data, errors } = await mutateAddItem({
@@ -689,13 +686,10 @@ const OrderItemsProvider: FC = ({ children }) => {
    * Add the items to the order form.
    * In case of an item already in the cart, it increments its quantity.
    */
-  const addItem = useCallback(
-    (
-      items: Array<Partial<CatalogItem>>,
-      marketingData?: Partial<MarketingData>,
-      salesChannel?: string,
-      options?: AddItemOptions
-    ) => {
+  const addItems = useCallback(
+    (items: Array<Partial<CatalogItem>>, options?: AddItemsOptions) => {
+      const { salesChannel, marketingData, allowedOutdatedData } = options ?? {}
+
       const { newItems, updatedItems } = items.reduce<
         Record<string, Array<Partial<CatalogItem>>>
       >(
@@ -724,7 +718,9 @@ const OrderItemsProvider: FC = ({ children }) => {
       )
 
       if (updatedItems.length) {
-        updatedItems.forEach((item) => updateQuantity(item, options))
+        updatedItems.forEach((item) =>
+          updateQuantity(item, { allowedOutdatedData })
+        )
       }
 
       if (newItems.length === 0) {
@@ -763,7 +759,7 @@ const OrderItemsProvider: FC = ({ children }) => {
           items: mutationInputItems,
           marketingData,
           salesChannel,
-          allowedOutdatedData: options?.allowedOutdatedData,
+          allowedOutdatedData,
         },
         orderFormItems,
       })
@@ -781,6 +777,17 @@ const OrderItemsProvider: FC = ({ children }) => {
     [addItemsTask, enqueueTask, setOrderForm, updateQuantity]
   )
 
+  const addItem = useCallback(
+    (
+      items: Array<Partial<CatalogItem>>,
+      marketingData?: Partial<MarketingData>,
+      salesChannel?: string
+    ) => {
+      return addItems(items, { marketingData, salesChannel })
+    },
+    [addItems]
+  )
+
   const setManualPrice = useCallback(
     (price: number, itemIndex: number) => {
       enqueueTask(setManualPriceTask(price, itemIndex))
@@ -795,8 +802,8 @@ const OrderItemsProvider: FC = ({ children }) => {
   )
 
   const value = useMemo(
-    () => ({ addItem, updateQuantity, removeItem, setManualPrice }),
-    [addItem, updateQuantity, removeItem, setManualPrice]
+    () => ({ addItem, addItems, updateQuantity, removeItem, setManualPrice }),
+    [addItem, addItems, updateQuantity, removeItem, setManualPrice]
   )
 
   useEffect(() => {
