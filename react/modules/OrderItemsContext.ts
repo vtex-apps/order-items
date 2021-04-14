@@ -23,7 +23,7 @@ export interface Context {
     props: Partial<CatalogItem>,
     options?: UpdateItemOptions
   ) => void
-  removeItem: (props: Partial<CatalogItem>) => void
+  removeItem: (props: Partial<CatalogItem>, options?: UpdateItemOptions) => void
   setManualPrice: (price: number, itemIndex: number) => void
   addItems: (
     items: Array<Partial<CatalogItem>>,
