@@ -43,3 +43,4 @@ yarn-error.log
 *.orig
 package-lock.json
 .editorconfig
+types/

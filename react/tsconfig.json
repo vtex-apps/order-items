@@ -9,7 +9,7 @@
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "sourceMap": true,
     "strictFunctionTypes": true,
     "strictNullChecks": true,

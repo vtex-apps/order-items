@@ -10,7 +10,7 @@ export interface UpdateItemOptions {
   allowedOutdatedData?: string[]
 }
 
-interface Context {
+export interface Context {
   /**
    * @deprecated Use `addItems` instead
    */
