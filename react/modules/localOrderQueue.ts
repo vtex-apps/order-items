@@ -12,12 +12,14 @@ export type UpdateQuantityInput =
 
 interface UpdateQuantityMutationVariables {
   orderItems: UpdateQuantityInput[]
+  allowedOutdatedData?: string[]
 }
 
 interface AddItemMutationVariables {
   items: OrderFormItemInput[]
   marketingData?: Partial<MarketingData>
   salesChannel?: string
+  allowedOutdatedData?: string[]
 }
 
 type LocalOrderTask =

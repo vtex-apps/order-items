@@ -9,7 +9,12 @@ import type { Item, AssemblyOptionInput } from 'vtex.checkout-graphql'
 import { useSplunk } from 'vtex.checkout-splunk'
 import * as uuid from 'uuid'
 
-import { OrderItemsContext, useOrderItems } from './modules/OrderItemsContext'
+import {
+  OrderItemsContext,
+  useOrderItems,
+  AddItemsOptions,
+  UpdateItemOptions,
+} from './modules/OrderItemsContext'
 import type { UpdateQuantityInput } from './modules/localOrderQueue'
 import {
   LocalOrderTaskType,
@@ -205,6 +210,7 @@ const useAddItemsTask = (
       items: OrderFormItemInput[]
       marketingData?: Partial<MarketingData>
       salesChannel?: string
+      allowedOutdatedData?: string[]
     }
   >(AddToCart)
 
@@ -217,11 +223,13 @@ const useAddItemsTask = (
       mutationInputMarketingData,
       orderFormItems,
       salesChannel,
+      options,
     }: {
       mutationInputItems: OrderFormItemInput[]
       mutationInputMarketingData?: Partial<MarketingData>
       orderFormItems: Item[]
       salesChannel?: string
+      options?: AddItemsOptions
     }) => ({
       execute: async () => {
         const { data, errors } = await mutateAddItem({
@@ -229,6 +237,7 @@ const useAddItemsTask = (
             items: mutationInputItems,
             marketingData: mutationInputMarketingData,
             salesChannel,
+            allowedOutdatedData: options?.allowedOutdatedData,
           },
         })
 
@@ -361,10 +370,12 @@ const useUpdateItemsTask = (
       items,
       orderFormItems,
       id,
+      options,
     }: {
       items: UpdateQuantityInput[]
       orderFormItems: Item[]
       id: string
+      options?: UpdateItemOptions
     }) => {
       return {
         id,
@@ -388,6 +399,7 @@ const useUpdateItemsTask = (
 
               return input
             }),
+            allowedOutdatedData: options?.allowedOutdatedData,
           }
 
           const { data, errors } = await mutateUpdateQuantity({
@@ -518,7 +530,7 @@ const OrderItemsProvider: FC = ({ children }) => {
   }, [orderForm.items])
 
   const updateQuantity = useCallback(
-    (input) => {
+    (input, options?: UpdateItemOptions) => {
       let index: number
       let uniqueId = ''
 
@@ -634,6 +646,7 @@ const OrderItemsProvider: FC = ({ children }) => {
         )
 
         mutationVariables = {
+          allowedOutdatedData: options?.allowedOutdatedData,
           orderItems:
             itemIndexInPreviousTask > -1
               ? previousTaskItems.map((prevInput, prevInputIndex) =>
@@ -644,7 +657,10 @@ const OrderItemsProvider: FC = ({ children }) => {
               : previousTaskItems.concat([{ uniqueId, quantity }]),
         }
       } else {
-        mutationVariables = { orderItems: [{ uniqueId, quantity }] }
+        mutationVariables = {
+          allowedOutdatedData: options?.allowedOutdatedData,
+          orderItems: [{ uniqueId, quantity }],
+        }
       }
 
       pushLocalOrderQueue({
@@ -659,6 +675,7 @@ const OrderItemsProvider: FC = ({ children }) => {
           items: mutationVariables.orderItems,
           orderFormItems: currentOrderFormItems,
           id,
+          options,
         })
       )
     },
@@ -669,12 +686,10 @@ const OrderItemsProvider: FC = ({ children }) => {
    * Add the items to the order form.
    * In case of an item already in the cart, it increments its quantity.
    */
-  const addItem = useCallback(
-    (
-      items: Array<Partial<CatalogItem>>,
-      marketingData?: Partial<MarketingData>,
-      salesChannel?: string
-    ) => {
+  const addItems = useCallback(
+    (items: Array<Partial<CatalogItem>>, options?: AddItemsOptions) => {
+      const { salesChannel, marketingData, allowedOutdatedData } = options ?? {}
+
       const { newItems, updatedItems } = items.reduce<
         Record<string, Array<Partial<CatalogItem>>>
       >(
@@ -703,7 +718,9 @@ const OrderItemsProvider: FC = ({ children }) => {
       )
 
       if (updatedItems.length) {
-        updatedItems.forEach((item) => updateQuantity(item))
+        updatedItems.forEach((item) =>
+          updateQuantity(item, { allowedOutdatedData })
+        )
       }
 
       if (newItems.length === 0) {
@@ -742,6 +759,7 @@ const OrderItemsProvider: FC = ({ children }) => {
           items: mutationInputItems,
           marketingData,
           salesChannel,
+          allowedOutdatedData,
         },
         orderFormItems,
       })
@@ -752,10 +770,22 @@ const OrderItemsProvider: FC = ({ children }) => {
           mutationInputMarketingData: marketingData,
           orderFormItems,
           salesChannel,
+          options,
         })
       )
     },
     [addItemsTask, enqueueTask, setOrderForm, updateQuantity]
+  )
+
+  const addItem = useCallback(
+    (
+      items: Array<Partial<CatalogItem>>,
+      marketingData?: Partial<MarketingData>,
+      salesChannel?: string
+    ) => {
+      return addItems(items, { marketingData, salesChannel })
+    },
+    [addItems]
   )
 
   const setManualPrice = useCallback(
@@ -766,13 +796,14 @@ const OrderItemsProvider: FC = ({ children }) => {
   )
 
   const removeItem = useCallback(
-    (props: Partial<Item>) => updateQuantity({ ...props, quantity: 0 }),
+    (props: Partial<Item>, options?: UpdateItemOptions) =>
+      updateQuantity({ ...props, quantity: 0 }, options),
     [updateQuantity]
   )
 
   const value = useMemo(
-    () => ({ addItem, updateQuantity, removeItem, setManualPrice }),
-    [addItem, updateQuantity, removeItem, setManualPrice]
+    () => ({ addItem, addItems, updateQuantity, removeItem, setManualPrice }),
+    [addItem, addItems, updateQuantity, removeItem, setManualPrice]
   )
 
   useEffect(() => {
@@ -786,6 +817,9 @@ const OrderItemsProvider: FC = ({ children }) => {
             mutationInputMarketingData: task.variables.marketingData,
             orderFormItems: task.orderFormItems,
             salesChannel: task.variables.salesChannel,
+            options: {
+              allowedOutdatedData: task.variables.allowedOutdatedData,
+            },
           })
         )
       } else if (task.type === LocalOrderTaskType.UPDATE_MUTATION) {
@@ -794,6 +828,9 @@ const OrderItemsProvider: FC = ({ children }) => {
             items: task.variables.orderItems,
             orderFormItems: task.orderFormItems,
             id: task.id!,
+            options: {
+              allowedOutdatedData: task.variables.allowedOutdatedData,
+            },
           })
         )
       }

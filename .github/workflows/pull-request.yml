@@ -1,8 +1,13 @@
 name: PR actions
-'on':
+on:
   pull_request:
+    types:
+    - opened
+    - synchronize
+  push:
     branches:
-      - master
+    - main
+
 jobs:
   danger-ci:
     name: Danger CI
@@ -19,6 +24,7 @@ jobs:
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
           REQUIRE_CHANGELOG_VERSION: false
+
   io-app-test:
     name: IO app test
     runs-on: ubuntu-latest
@@ -41,6 +47,7 @@ jobs:
             ${{ runner.os }}-yarn-
       - name: Run test on every builder directory
         uses: vtex/action-io-app-test@master
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
