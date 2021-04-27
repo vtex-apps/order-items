@@ -6,6 +6,8 @@ import {
 declare global {
   type OrderForm = GraphqlOrderForm
 
+  type Maybe<T> = T | undefined | null
+
   interface OrderFormItemInput {
     id?: number
     index?: number
@@ -41,7 +43,7 @@ declare global {
   }
 
   interface MarketingData {
-    coupon: string
+    coupon: Maybe<string>
   }
 
   interface SKUSpecification {
