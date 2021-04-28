@@ -7,52 +7,29 @@
 
 Any kind of item manipulation should be made through this component. This ensures that each interaction with the Checkout API happens in succession, avoiding concurrency issues.
 
+This repository is an adapter of [`@vtex/order-items`](https://github.com/vtex/order-items) to be used inside VTEX IO apps. For documentation on the API, please refer to the provided package docs.
+
 ## Usage
 
-Use the function `useOrderItems` to get access to the API methods. Your component must be contained in a `OrderItemsProvider`, which in turn must be contained in a `OrderManagerProvider`.
+Use the function `useOrderItems` to get access to the API methods. Your component must be contained in a `OrderItemsProvider`, which in turn must be contained in a `OrderFormProvider`.
 
 ```tsx
-import { OrderManagerProvider, useOrderManager } from 'vtex.order-manager/OrderManager'
+import { OrderFormProvider, useOrderForm } from 'vtex.order-manager/OrderForm'
 import { OrderItemsProvider, useOrderItems } from 'vtex.order-items/OrderItems'
 
 const MainComponent: FunctionComponent = () => (
-  <OrderManagerProvider>
+  <OrderFormProvider>
     <OrderItemsProvider>
       <MyComponent />
     </OrderItemsProvider>
-  </OrderManagerProvider>
+  </OrderFormProvider>
 )
 
 const MyComponent: FunctionComponent = () => {
-  const { orderForm: { items } } = useOrderManager()
+  const { orderForm: { items } } = useOrderForm()
   const { updateQuantity, removeItem } = useOrderItems()
   // ...
 }
-```
-
-## API
-
-### `updateQuantity: (props: { uniqueId?: string, index?: number, quantity: number }) => void`
-
-Updates the quantity of an item in the order form. `props` must contain either the `uniqueId` or `index` of the item to be updated as well as the desired `quantity`.
-
-#### Example
-
-```tsx
-updateQuantity({
-  uniqueId: 'E1FDB9F661D74543AE3A13D587641E63',
-  quantity: 3,
-})
-```
-
-### `removeItem: (props: { uniqueId?: string, index?: number }) => void`
-
-Removes an item from the cart. `props` must contain either the `uniqueId` or `index` of the item to be removed.
-
-#### Example
-
-```tsx
-removeItem({ uniqueId: 'E1FDB9F661D74543AE3A13D587641E63' })
 ```
 
 ## Contributors ✨

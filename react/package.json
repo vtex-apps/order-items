@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@vtex/css-handles": "^1.1.3",
-    "@vtex/order-items": "^0.6.0",
+    "@vtex/order-items": "^0.6.1",
     "classnames": "^2.2.6",
     "debounce": "^1.2.0",
     "react": "^16.8.3",
