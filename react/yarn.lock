@@ -1578,10 +1578,10 @@
   resolved "https://registry.yarnpkg.com/@vtex/css-handles/-/css-handles-1.1.3.tgz#30bd1010f2907443188738f74dd11d3b6b4ac624"
   integrity sha512-DkqnzMf5jW6lQ1L8wYb9fnXyh0FqZym8qEokGYjeLUqBLBAiVK8XbI4U0ezFswWTOJ3iHZUkUjqPt5WodxR29w==
 
-"@vtex/order-items@^0.6.0":
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/@vtex/order-items/-/order-items-0.6.0.tgz#2e3d0d1da28a39be1d6c460b0c5728e1bbc2c1d1"
-  integrity sha512-s5bsQ4F/JEUK7tNoIcl6ryOW2o8Ok1j8gSs1+CXOSg79pa4FHEhDLjvafDZJnmgwVfKaPgbPntMDWMtSRlY7WA==
+"@vtex/order-items@^0.6.1":
+  version "0.6.1"
+  resolved "https://registry.yarnpkg.com/@vtex/order-items/-/order-items-0.6.1.tgz#6119d88782538f24d5ffdb7c2859acf402b75bb4"
+  integrity sha512-xyX7wguYiFK5U3+6788tnkFH/vsY51Y2Hgi/EYrmEb6O4IKZrNmwsELu+c4W2lQg9NxAd9QZ4oB9QN4HaWsiPA==
   dependencies:
     "@types/uuid" "^8.3.0"
     "@vtex/order-manager" "^0.5.0"
