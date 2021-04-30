@@ -5273,9 +5273,9 @@ verror@1.10.0:
   version "0.12.0"
   resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-items@0.12.0/public/@types/vtex.order-items#de70c11be1ceefb18d3c1a1e25eae63a636dd8b8"
 
-"vtex.order-manager@https://newcontextual--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.order-manager@0.10.0+build1619527670/public/@types/vtex.order-manager":
-  version "0.10.0"
-  resolved "https://newcontextual--checkoutio.myvtex.com/_v/private/typings/linked/v1/vtex.order-manager@0.10.0+build1619527670/public/@types/vtex.order-manager#5e3b4a5f8b0d0d7698887206793564e3092e37f2"
+"vtex.order-manager@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.11.0/public/@types/vtex.order-manager":
+  version "0.11.0"
+  resolved "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.11.0/public/@types/vtex.order-manager#647aba86ed6544dd72bc67ad5333e2aadad03a57"
 
 "vtex.render-runtime@http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.128.4/public/@types/vtex.render-runtime":
   version "8.128.4"
