@@ -163,7 +163,7 @@ const useEnqueueTask = () => {
     (task) =>
       enqueue(task.execute, task.id).then(
         (orderForm: OrderForm) => {
-          popLocalOrderQueue()
+          popLocalOrderQueue(0, { log: logSplunk })
           if (queueStatusRef.current === QueueStatus.FULFILLED) {
             setOrderForm(orderForm)
           } else {
@@ -177,12 +177,12 @@ const useEnqueueTask = () => {
         },
         (error: any) => {
           if (error && error.code === constants.TASK_CANCELLED_CODE) {
-            popLocalOrderQueue(error.index)
+            popLocalOrderQueue(error.index, { log: logSplunk })
 
             return
           }
 
-          popLocalOrderQueue()
+          popLocalOrderQueue(0, { log: logSplunk })
 
           logSplunk({
             type: 'Error',
@@ -274,10 +274,13 @@ const useAddItemsTask = (
 
           // update all mutations in the queue that referenced
           // this item with it's fake `uniqueId`
-          updateLocalQueueItemIds({
-            fakeUniqueId,
-            uniqueId: updatedItem.uniqueId,
-          })
+          updateLocalQueueItemIds(
+            {
+              fakeUniqueId,
+              uniqueId: updatedItem.uniqueId,
+            },
+            { log: logSplunk }
+          )
           fakeUniqueIdMapRef.current[fakeUniqueId] = updatedItem.uniqueId
         })
 
@@ -515,6 +518,7 @@ interface UpdateItemsMutation {
 
 const OrderItemsProvider: FC = ({ children }) => {
   const { orderForm, setOrderForm } = useOrderForm()
+  const { logSplunk } = useSplunk()
 
   const fakeUniqueIdMapRef = useFakeUniqueIdMap()
 
@@ -590,7 +594,7 @@ const OrderItemsProvider: FC = ({ children }) => {
       let id = uuid.v4()
 
       if (quantity > 0) {
-        const localQueue = getLocalOrderQueue().queue
+        const localQueue = getLocalOrderQueue({ log: logSplunk }).queue
 
         let previousTaskIndex = -1
         const originalId = id
@@ -663,12 +667,17 @@ const OrderItemsProvider: FC = ({ children }) => {
         }
       }
 
-      pushLocalOrderQueue({
-        id,
-        type: LocalOrderTaskType.UPDATE_MUTATION,
-        variables: mutationVariables,
-        orderFormItems: currentOrderFormItems,
-      })
+      pushLocalOrderQueue(
+        {
+          id,
+          type: LocalOrderTaskType.UPDATE_MUTATION,
+          variables: mutationVariables,
+          orderFormItems: currentOrderFormItems,
+        },
+        {
+          log: logSplunk,
+        }
+      )
 
       enqueueTask(
         updateItemsTask({
@@ -679,7 +688,7 @@ const OrderItemsProvider: FC = ({ children }) => {
         })
       )
     },
-    [enqueueTask, setOrderForm, updateItemsTask]
+    [enqueueTask, logSplunk, setOrderForm, updateItemsTask]
   )
 
   /**
@@ -753,16 +762,19 @@ const OrderItemsProvider: FC = ({ children }) => {
         }
       })
 
-      pushLocalOrderQueue({
-        type: LocalOrderTaskType.ADD_MUTATION,
-        variables: {
-          items: mutationInputItems,
-          marketingData,
-          salesChannel,
-          allowedOutdatedData,
+      pushLocalOrderQueue(
+        {
+          type: LocalOrderTaskType.ADD_MUTATION,
+          variables: {
+            items: mutationInputItems,
+            marketingData,
+            salesChannel,
+            allowedOutdatedData,
+          },
+          orderFormItems,
         },
-        orderFormItems,
-      })
+        { log: logSplunk }
+      )
 
       enqueueTask(
         addItemsTask({
@@ -807,7 +819,7 @@ const OrderItemsProvider: FC = ({ children }) => {
   )
 
   useEffect(() => {
-    const localOrderQueue = getLocalOrderQueue()
+    const localOrderQueue = getLocalOrderQueue({ log: logSplunk })
 
     localOrderQueue.queue.forEach((task) => {
       if (task.type === LocalOrderTaskType.ADD_MUTATION) {
