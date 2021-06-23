@@ -5,6 +5,20 @@
 
 > Centralizes all item related requests to the Checkout API.
 
+## Warning 🚨
+
+This repository contains **experimental** code for VTEX Checkout and should **not** be used in production.
+
+This code is "experimental" for various reasons:
+- Some are not tested as rigorously as the main code.
+- Some are tested but not maintained.
+- It can suffer from significant changes (breaking changes) without further notice.
+
+**Use it at your own risk!** ☠️
+
+
+## About
+
 Any kind of item manipulation should be made through this component. This ensures that each interaction with the Checkout API happens in succession, avoiding concurrency issues.
 
 This repository is an adapter of [`@vtex/order-items`](https://github.com/vtex/order-items) to be used inside VTEX IO apps. For documentation on the API, please refer to the provided package docs.
