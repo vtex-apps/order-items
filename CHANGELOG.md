@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- using husky and lint staged correctly
+
 ## [0.13.15] - 2022-07-19
 
 ## [0.13.14] - 2022-07-19
