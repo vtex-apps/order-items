@@ -5,7 +5,7 @@
 
 > Centralizes all item related requests to the Checkout API.
 
-## Warning 🚨
+## Warning =�
 
 This repository contains **experimental** code for VTEX Checkout and should **not** be used in production.
 
@@ -14,7 +14,7 @@ This code is "experimental" for various reasons:
 - Some are tested but not maintained.
 - It can suffer from significant changes (breaking changes) without further notice.
 
-**Use it at your own risk!** ☠️
+**Use it at your own risk!**  
 
 
 ## About
@@ -46,7 +46,7 @@ const MyComponent: FunctionComponent = () => {
 }
 ```
 
-## Contributors ✨
+## Contributors (
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
@@ -58,3 +58,8 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind are welcome!
+
+
+**Upcoming documentation:**
+
+ - [Bump hosted-git-info from 2.8.8 to 2.8.9 in /react](https://github.com/vtex-apps/order-items/pull/49)
