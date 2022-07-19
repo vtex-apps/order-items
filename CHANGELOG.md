@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+- Using json-schema in resolutions
+
 ## [0.13.13] - 2022-07-19
 
 ## [0.13.12] - 2022-07-19
