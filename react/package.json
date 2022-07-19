@@ -14,7 +14,6 @@
     "react": "^16.8.3",
     "react-dom": "^16.9.0",
     "react-intl": "3.9.1",
-    "recompose": "^0.30.0",
     "uuid": "^3.3.3"
   },
   "devDependencies": {
@@ -28,7 +27,6 @@
     "@types/ramda": "^0.26.5",
     "@types/react": "^16.8.10",
     "@types/react-intl": "^2.3.17",
-    "@types/recompose": "^0.30.7",
     "@types/uuid": "^3.4.6",
     "@vtex/test-tools": "^3.3.2",
     "apollo-client": "^2.5.1",
