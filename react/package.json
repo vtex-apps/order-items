@@ -21,14 +21,14 @@
     "@types/classnames": "^2.2.7",
     "@types/debounce": "^1.2.0",
     "@types/graphql": "^14.2.0",
-    "@types/jest": "^24.0.11",
+    "@types/jest": "^28.1.6",
     "@types/node": "^11.13.0",
     "@types/prop-types": "^15.7.0",
     "@types/ramda": "^0.26.5",
     "@types/react": "^16.8.10",
     "@types/react-intl": "^2.3.17",
     "@types/uuid": "^3.4.6",
-    "@vtex/test-tools": "^3.3.2",
+    "@vtex/test-tools": "^3.4.3",
     "apollo-client": "^2.5.1",
     "graphql-tag": "^2.11.0",
     "ramda": "^0.26.1",
@@ -40,5 +40,8 @@
     "vtex.order-items": "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-items@0.12.0/public/@types/vtex.order-items",
     "vtex.order-manager": "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.order-manager@0.11.0/public/@types/vtex.order-manager",
     "vtex.render-runtime": "http://vtex.vtexassets.com/_v/public/typings/v1/vtex.render-runtime@8.128.4/public/@types/vtex.render-runtime"
+  },
+  "resolutions": {
+    "json-schema": "^0.4.0"
   }
 }
