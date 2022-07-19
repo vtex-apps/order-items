@@ -1,6 +1,6 @@
 {
   "name": "vtex.order-items",
-  "version": "0.13.5",
+  "version": "0.13.6",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
