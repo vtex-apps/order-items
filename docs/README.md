@@ -64,3 +64,4 @@ This project follows the [all-contributors](https://github.com/all-contributors/
 
  - [Bump hosted-git-info from 2.8.8 to 2.8.9 in /react](https://github.com/vtex-apps/order-items/pull/49)
  - [Bump ansi-regex from 4.1.0 to 4.1.1](https://github.com/vtex-apps/order-items/pull/68)
+ - [Bump ansi-regex from 4.1.0 to 4.1.1 in /react](https://github.com/vtex-apps/order-items/pull/69)
