@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- index now has higher priority than uniqueId
+
 ## [0.13.20] - 2022-07-19
 
 ## [0.13.19] - 2022-07-19
