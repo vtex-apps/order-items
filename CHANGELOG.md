@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Bump NPM package `@vtex/order-items` to `0.6.7`.
+
 ## [0.13.21] - 2022-07-28
 
 ### Fixed
