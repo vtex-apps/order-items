@@ -38,7 +38,7 @@ type OfferWithPriceToken = {
 }
 
 function stashPriceTokens(items: OfferWithPriceToken[]) {
-  items.forEach(item => {
+  items.forEach((item) => {
     if (item?.priceToken) {
       priceTokenByOffer.set(offerKey(item.id, item.seller), item.priceToken)
     }
@@ -50,11 +50,13 @@ function withPriceTokens(variables: AddToCartMutationVariables) {
     return variables
   }
 
-  const items = ((variables.items ?? []) as OfferWithPriceToken[]).map(item => {
-    const priceToken = priceTokenByOffer.get(offerKey(item?.id, item?.seller))
+  const items = ((variables.items ?? []) as OfferWithPriceToken[]).map(
+    (item) => {
+      const priceToken = priceTokenByOffer.get(offerKey(item?.id, item?.seller))
 
-    return priceToken ? { ...item, priceToken } : item
-  })
+      return priceToken ? { ...item, priceToken } : item
+    }
+  )
 
   return { ...variables, items } as AddToCartMutationVariables
 }
