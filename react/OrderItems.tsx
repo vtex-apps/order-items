@@ -11,10 +11,82 @@ import {
 import type { OrderForm } from 'vtex.checkout-graphql'
 import { OrderForm as OrderManager, OrderQueue } from 'vtex.order-manager'
 import { useSplunk } from 'vtex.checkout-splunk'
-import { useOrderItems, createOrderItemsProvider } from '@vtex/order-items'
+import {
+  useOrderItems as useBaseOrderItems,
+  createOrderItemsProvider,
+} from '@vtex/order-items'
 
 const { useOrderForm } = OrderManager
 const { useOrderQueue, useQueueStatus } = OrderQueue
+
+/**
+ * `adjustForItemInput` in `@vtex/order-items` whitelists the fields it forwards
+ * to the mutation, so `priceToken` (signed price, Pricing Fallback V2) is
+ * dropped before it reaches checkout. Until the field ships upstream, the token
+ * is stashed when the caller adds the item and re-attached to the mutation
+ * variables. Keyed by SKU + seller, which is what identifies an offer.
+ */
+const priceTokenByOffer = new Map<string, string>()
+
+const offerKey = (id?: string | number | null, seller?: string | null) =>
+  `${id ?? ''}::${seller ?? ''}`
+
+type OfferWithPriceToken = {
+  id?: string | number | null
+  seller?: string | null
+  priceToken?: string | null
+}
+
+function stashPriceTokens(items: OfferWithPriceToken[]) {
+  items.forEach((item) => {
+    const key = offerKey(item?.id, item?.seller)
+
+    if (item?.priceToken) {
+      priceTokenByOffer.set(key, item.priceToken)
+    } else {
+      priceTokenByOffer.delete(key)
+    }
+  })
+}
+
+function withPriceTokens(variables: AddToCartMutationVariables) {
+  if (priceTokenByOffer.size === 0) {
+    return variables
+  }
+
+  const items = ((variables.items ?? []) as OfferWithPriceToken[]).map(
+    (item) => {
+      const key = offerKey(item?.id, item?.seller)
+      const priceToken = priceTokenByOffer.get(key)
+
+      if (!priceToken) {
+        return item
+      }
+
+      priceTokenByOffer.delete(key)
+
+      return { ...item, priceToken }
+    }
+  )
+
+  return { ...variables, items } as AddToCartMutationVariables
+}
+
+function useOrderItems() {
+  const orderItems = useBaseOrderItems()
+  const { addItems } = orderItems
+
+  const addItemsWithPriceToken = useCallback<typeof addItems>(
+    (items, options) => {
+      stashPriceTokens(items as OfferWithPriceToken[])
+
+      return addItems(items, options)
+    },
+    [addItems]
+  )
+
+  return { ...orderItems, addItems: addItemsWithPriceToken }
+}
 
 function useLogger() {
   const { logSplunk } = useSplunk()
@@ -45,9 +117,11 @@ function useMutateAddItems() {
 
   return useCallback(
     (variables: AddToCartMutationVariables) => {
-      return mutateAddItem({ variables }).then(({ data, errors }) => {
-        return { data: data?.addToCart, errors }
-      })
+      return mutateAddItem({ variables: withPriceTokens(variables) }).then(
+        ({ data, errors }) => {
+          return { data: data?.addToCart, errors }
+        }
+      )
     },
     [mutateAddItem]
   )

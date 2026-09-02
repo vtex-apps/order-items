@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Forward the search-signed `priceToken` (Pricing Fallback V2) on the add to cart mutation input. `adjustForItemInput` lives in `@vtex/order-items` and whitelists the fields it forwards, so `useOrderItems` now stashes the token per SKU + seller when the item is added and re-attaches it to the mutation variables. This bridge can be dropped once the field ships in the library.
+
 ### Changed
 
 - Update GitHub actions/cache to v4
