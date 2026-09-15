@@ -1,4 +1,5 @@
-import { useCallback } from 'react'
+import type { ReactNode } from 'react'
+import React, { createContext, useCallback, useContext, useRef } from 'react'
 import { useMutation } from 'react-apollo'
 import UpdateItems from 'vtex.checkout-resources/MutationUpdateItems'
 import AddToCart from 'vtex.checkout-resources/MutationAddToCart'
@@ -25,8 +26,41 @@ const { useOrderQueue, useQueueStatus } = OrderQueue
  * dropped before it reaches checkout. Until the field ships upstream, the token
  * is stashed when the caller adds the item and re-attached to the mutation
  * variables. Keyed by SKU + seller, which is what identifies an offer.
+ *
+ * Tokens are queued per key (FIFO) rather than held one at a time, so two
+ * adds for the same offer — racing, or batched together with different
+ * tokens — each get the token they were stashed with instead of one
+ * overwriting or resurrecting the other. The queue itself lives in a context
+ * scoped to one `OrderItemsProvider` instance, not a module-level singleton,
+ * so unrelated mounts (e.g. minicart + checkout) never share offers.
  */
-const priceTokenByOffer = new Map<string, string>()
+type PriceTokenCache = Map<string, string[]>
+
+const PriceTokenCacheContext = createContext<PriceTokenCache | null>(null)
+
+function usePriceTokenCache() {
+  const cache = useContext(PriceTokenCacheContext)
+
+  if (!cache) {
+    throw new Error('usePriceTokenCache must be used within OrderItemsProvider')
+  }
+
+  return cache
+}
+
+function PriceTokenCacheProvider({ children }: { children: ReactNode }) {
+  const cacheRef = useRef<PriceTokenCache | null>(null)
+
+  if (!cacheRef.current) {
+    cacheRef.current = new Map()
+  }
+
+  return (
+    <PriceTokenCacheContext.Provider value={cacheRef.current}>
+      {children}
+    </PriceTokenCacheContext.Provider>
+  )
+}
 
 const offerKey = (id?: string | number | null, seller?: string | null) =>
   `${id ?? ''}::${seller ?? ''}`
@@ -37,35 +71,45 @@ type OfferWithPriceToken = {
   priceToken?: string | null
 }
 
-function stashPriceTokens(items: OfferWithPriceToken[]) {
+function stashPriceTokens(
+  cache: PriceTokenCache,
+  items: OfferWithPriceToken[]
+) {
   items.forEach((item) => {
-    const key = offerKey(item?.id, item?.seller)
+    if (!item?.priceToken) {
+      return
+    }
 
-    if (item?.priceToken) {
-      priceTokenByOffer.set(key, item.priceToken)
+    const key = offerKey(item.id, item.seller)
+    const queue = cache.get(key)
+
+    if (queue) {
+      queue.push(item.priceToken)
     } else {
-      priceTokenByOffer.delete(key)
+      cache.set(key, [item.priceToken])
     }
   })
 }
 
-function withPriceTokens(variables: AddToCartMutationVariables) {
-  if (priceTokenByOffer.size === 0) {
+function withPriceTokens(
+  cache: PriceTokenCache,
+  variables: AddToCartMutationVariables
+) {
+  if (cache.size === 0) {
     return variables
   }
 
   const items = ((variables.items ?? []) as OfferWithPriceToken[]).map(
     (item) => {
       const key = offerKey(item?.id, item?.seller)
-      const priceToken = priceTokenByOffer.get(key)
+      const queue = cache.get(key)
+      const priceToken = queue?.shift()
 
-      if (!priceToken) {
-        return item
+      if (queue && queue.length === 0) {
+        cache.delete(key)
       }
 
-      priceTokenByOffer.delete(key)
-
-      return { ...item, priceToken }
+      return priceToken ? { ...item, priceToken } : item
     }
   )
 
@@ -73,16 +117,17 @@ function withPriceTokens(variables: AddToCartMutationVariables) {
 }
 
 function useOrderItems() {
+  const cache = usePriceTokenCache()
   const orderItems = useBaseOrderItems()
   const { addItems } = orderItems
 
   const addItemsWithPriceToken = useCallback<typeof addItems>(
     (items, options) => {
-      stashPriceTokens(items as OfferWithPriceToken[])
+      stashPriceTokens(cache, items as OfferWithPriceToken[])
 
       return addItems(items, options)
     },
-    [addItems]
+    [addItems, cache]
   )
 
   return { ...orderItems, addItems: addItemsWithPriceToken }
@@ -110,6 +155,7 @@ interface UpdateItemsMutation {
 }
 
 function useMutateAddItems() {
+  const cache = usePriceTokenCache()
   const [mutateAddItem] = useMutation<
     { addToCart: OrderForm },
     AddToCartMutationVariables
@@ -117,13 +163,13 @@ function useMutateAddItems() {
 
   return useCallback(
     (variables: AddToCartMutationVariables) => {
-      return mutateAddItem({ variables: withPriceTokens(variables) }).then(
-        ({ data, errors }) => {
-          return { data: data?.addToCart, errors }
-        }
-      )
+      return mutateAddItem({
+        variables: withPriceTokens(cache, variables),
+      }).then(({ data, errors }) => {
+        return { data: data?.addToCart, errors }
+      })
     },
-    [mutateAddItem]
+    [cache, mutateAddItem]
   )
 }
 
@@ -161,7 +207,9 @@ function useMutateSetManualPrice() {
   )
 }
 
-const { OrderItemsProvider } = createOrderItemsProvider<OrderForm>({
+const {
+  OrderItemsProvider: BaseOrderItemsProvider,
+} = createOrderItemsProvider<OrderForm>({
   useOrderForm,
   useOrderQueue,
   useQueueStatus,
@@ -170,6 +218,14 @@ const { OrderItemsProvider } = createOrderItemsProvider<OrderForm>({
   useMutateSetManualPrice,
   useMutateUpdateQuantity,
 })
+
+function OrderItemsProvider({ children }: { children: ReactNode }) {
+  return (
+    <PriceTokenCacheProvider>
+      <BaseOrderItemsProvider>{children}</BaseOrderItemsProvider>
+    </PriceTokenCacheProvider>
+  )
+}
 
 export { useOrderItems, OrderItemsProvider }
 export default { useOrderItems, OrderItemsProvider }
