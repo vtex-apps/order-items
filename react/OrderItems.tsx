@@ -15,6 +15,7 @@ import { useSplunk } from 'vtex.checkout-splunk'
 import {
   useOrderItems as useBaseOrderItems,
   createOrderItemsProvider,
+  isSameItem,
 } from '@vtex/order-items'
 
 const { useOrderForm } = OrderManager
@@ -33,6 +34,23 @@ const { useOrderQueue, useQueueStatus } = OrderQueue
  * overwriting or resurrecting the other. The queue itself lives in a context
  * scoped to one `OrderItemsProvider` instance, not a module-level singleton,
  * so unrelated mounts (e.g. minicart + checkout) never share offers.
+ *
+ * Two things the queue alone doesn't cover:
+ *
+ * - Only items that resolve to a brand-new cart line reach `withPriceTokens`
+ *   — an item matching one already in the cart is routed by the base library
+ *   to `updateQuantity` instead, which never sees this cache. A token stashed
+ *   for that item would sit unconsumed and leak onto a later, unrelated add
+ *   for the same key. `stashPriceTokens` mirrors the library's own new-vs-
+ *   existing check (`isSameItem`) so those tokens are never queued at all.
+ * - `@vtex/order-manager`'s `TaskQueue` replays a task's mutation call as-is
+ *   if it fails while offline, so the same `variables.items` can reach
+ *   `withPriceTokens` more than once for one logical add. Reading is
+ *   therefore non-destructive (peek by position, not `shift`); the matching
+ *   entries are only removed once the mutation actually resolves, via
+ *   `onSuccess`, so a retry still finds its token. A permanently failed
+ *   (non-offline) send is the one case that still orphans its entry — same
+ *   residual accepted for the module-global version of this cache.
  */
 type PriceTokenCache = Map<string, string[]>
 
@@ -68,15 +86,32 @@ const offerKey = (id?: string | number | null, seller?: string | null) =>
 type OfferWithPriceToken = {
   id?: string | number | null
   seller?: string | null
+  options?: unknown[] | null
   priceToken?: string | null
 }
 
 function stashPriceTokens(
   cache: PriceTokenCache,
-  items: OfferWithPriceToken[]
+  items: OfferWithPriceToken[],
+  existingOrderFormItems: Array<{ id: string; seller: string }>
 ) {
   items.forEach((item) => {
     if (!item?.priceToken) {
+      return
+    }
+
+    const isAssemblyItem = (item.options?.length ?? 0) > 0
+    const matchesExistingItem =
+      !isAssemblyItem &&
+      existingOrderFormItems.some((orderFormItem) =>
+        isSameItem(item as any, orderFormItem as any, items as any)
+      )
+
+    // An item matching one already in the cart is routed to `updateQuantity`
+    // by the base library, not `addToCart` — it will never reach
+    // `withPriceTokens`, so stashing its token here would only leak it onto
+    // a later, unrelated add for this key.
+    if (matchesExistingItem) {
       return
     }
 
@@ -96,38 +131,67 @@ function withPriceTokens(
   variables: AddToCartMutationVariables
 ) {
   if (cache.size === 0) {
-    return variables
+    return { variables, onSuccess: () => {} }
   }
+
+  const occurrences = new Map<string, number>()
 
   const items = ((variables.items ?? []) as OfferWithPriceToken[]).map(
     (item) => {
       const key = offerKey(item?.id, item?.seller)
-      const queue = cache.get(key)
-      const priceToken = queue?.shift()
+      const occurrence = occurrences.get(key) ?? 0
 
-      if (queue && queue.length === 0) {
-        cache.delete(key)
-      }
+      occurrences.set(key, occurrence + 1)
+
+      const priceToken = cache.get(key)?.[occurrence]
 
       return priceToken ? { ...item, priceToken } : item
     }
   )
 
-  return { ...variables, items } as AddToCartMutationVariables
+  // Consuming entries is deferred until the mutation actually resolves —
+  // `TaskQueue` retries a failed-while-offline task by calling this again
+  // with the same `variables`, so peeking above must stay non-destructive,
+  // or a retry would find its own token already gone.
+  const onSuccess = () => {
+    occurrences.forEach((count, key) => {
+      const queue = cache.get(key)
+
+      if (!queue) {
+        return
+      }
+
+      queue.splice(0, count)
+
+      if (queue.length === 0) {
+        cache.delete(key)
+      }
+    })
+  }
+
+  return {
+    variables: { ...variables, items } as AddToCartMutationVariables,
+    onSuccess,
+  }
 }
 
 function useOrderItems() {
   const cache = usePriceTokenCache()
+  const { orderForm } = useOrderForm()
   const orderItems = useBaseOrderItems()
   const { addItems } = orderItems
 
   const addItemsWithPriceToken = useCallback<typeof addItems>(
     (items, options) => {
-      stashPriceTokens(cache, items as OfferWithPriceToken[])
+      stashPriceTokens(
+        cache,
+        items as OfferWithPriceToken[],
+        orderForm.items as Array<{ id: string; seller: string }>
+      )
 
       return addItems(items, options)
     },
-    [addItems, cache]
+    [addItems, cache, orderForm.items]
   )
 
   return { ...orderItems, addItems: addItemsWithPriceToken }
@@ -163,11 +227,20 @@ function useMutateAddItems() {
 
   return useCallback(
     (variables: AddToCartMutationVariables) => {
-      return mutateAddItem({
-        variables: withPriceTokens(cache, variables),
-      }).then(({ data, errors }) => {
-        return { data: data?.addToCart, errors }
-      })
+      const { variables: variablesWithTokens, onSuccess } = withPriceTokens(
+        cache,
+        variables
+      )
+
+      return mutateAddItem({ variables: variablesWithTokens }).then(
+        ({ data, errors }) => {
+          if (data?.addToCart && !(errors?.length ?? 0)) {
+            onSuccess()
+          }
+
+          return { data: data?.addToCart, errors }
+        }
+      )
     },
     [cache, mutateAddItem]
   )
